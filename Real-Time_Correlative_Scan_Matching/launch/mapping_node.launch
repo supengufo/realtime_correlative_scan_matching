@@ -1,0 +1,21 @@
+<launch>
+    <node pkg="realtime_correlative_scan_matching" type="mapping_node" name="mapping_node" output="screen" clear_params="true">
+        <param name="bag_file_path" value="/home/nrsl/dataset/ogm/laser1_2018-07-14-17-31-41.bag"/>
+        <param name="lidar_topic" value="/scan"/>
+        <param name="map_grid_sizes_y" value="1000"/>
+        <param name="map_grid_sizes_y" value="1000"/>
+        <param name="map_ori_x" value="500"/>
+        <param name="map_ori_y" value="500"/>
+        <param name="resolution" value="0.05"/>
+        <param name="search_step_xy" value="0.01"/>
+        <param name="search_step_rad" value="0.005"/>
+        <param name="layers" value="2"/>
+        <param name="magnification" value="2"/>
+
+    </node>
+
+    <node pkg="rviz" type="rviz" name="rviz" output="screen"
+          args="-d $(find realtime_correlative_scan_matching)/rviz/default.rviz" required="true">
+    </node>
+
+</launch>

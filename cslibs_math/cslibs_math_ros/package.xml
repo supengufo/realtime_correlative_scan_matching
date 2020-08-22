@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>cslibs_math_ros</name>
+  <version>0.0.6</version>
+  <description>
+    The cslibs_math_ros package provides functionality to convert TF math data types
+    to cslibs_math types.
+  </description>
+
+  <author email="richard.hanten@uni-tuebingen.de">Richard Hanten</author>
+  <author email="cornelia.schulz@uni-tuebingen.de">Cornelia Schulz</author>
+
+  <maintainer email="richard.hanten@uni-tuebingen.de">Richard Hanten</maintainer>
+  <maintainer email="cornelia.schulz@uni-tuebingen.de">Cornelia Schulz</maintainer>
+
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>cslibs_math</depend>
+  <depend>cslibs_math_2d</depend>
+  <depend>cslibs_math_3d</depend>
+  <depend>cslibs_time</depend>
+  <depend>tf</depend>
+
+  <export>
+  </export>
+</package>

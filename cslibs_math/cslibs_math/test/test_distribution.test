@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<launch>
+    <test test-name="cslibs_math_test_node_distribution" pkg="cslibs_math" type="distribution">
+        <param name="test_distribution_200"  value="$(find cslibs_math)/test/res/test_distribution_200.yaml"  />
+        <param name="test_distribution_500"  value="$(find cslibs_math)/test/res/test_distribution_500.yaml"  />
+        <param name="test_distribution_5000" value="$(find cslibs_math)/test/res/test_distribution_5000.yaml" />
+    </test>
+</launch>
