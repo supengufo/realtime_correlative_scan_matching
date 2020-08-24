@@ -59,6 +59,9 @@ public:
     inline double getY() const {
         return y_;
     }
+    inline double getYaw() const {
+        return theta_;
+    }
 private:
     double x_, y_, theta_;
 }; //class Pose2d
