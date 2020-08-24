@@ -71,17 +71,15 @@ void getMapParams(const ros::NodeHandle &ph, std::unordered_map<std::string, dou
     map_params["resolution"] = 0.05;
     map_params["search_step_xy"] = 0.01;
     map_params["search_step_rad"] = 0.005;
-    map_params["layers"] = 1;
+    map_params["layers"] = 2;
     map_params["magnification"] = 2;
 }
 void pubGridMap(const Mapper::Ptr &mapper, ros::Publisher &map_pub) {
     auto grid_map_msg = mapper->getROSOccGridMapVector().front();
-//    cout << "pub map now ... " << grid_map_msg.header.stamp << endl;
     map_pub.publish(grid_map_msg);
 };
 void pubGridMapLowResolution(const Mapper::Ptr &mapper, ros::Publisher &map_pub) {
     auto grid_map_msg = mapper->getROSOccGridMapVector().back();
-//    cout << "pub map now ... " << grid_map_msg.header.stamp << endl;
     map_pub.publish(grid_map_msg);
 };
 int main(int argc, char **argv) {
@@ -130,13 +128,11 @@ int main(int argc, char **argv) {
 //            pose_estimate = Eigen::Matrix3d::Identity();
 //            pose_estimate = Pose2d(0, 0, 0);
             mapper->updateMultiSolutionMap(pose_estimate, scan);
-//            cout<<"Init now ..."<<endl;
             init = true;
         }
         else {
 //            double score = mapper->RealTimeCorrelativeScanMatch(pose_estimate_pre, scan, pose_estimate);
             mapper->RealTimeCorrelativeScanMatch(pose_estimate_pre, scan, pose_estimate);
-//            cout<<"update map now ..."<<endl;
             mapper->updateMultiSolutionMap(pose_estimate, scan);
         }
         //

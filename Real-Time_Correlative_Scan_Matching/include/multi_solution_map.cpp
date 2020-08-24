@@ -100,12 +100,10 @@ void SingleLayer::updateMap(const Pose2d &pose, const sensor_msgs::LaserScanCons
         updateOccGrids(occ_point_coordinate);
         std::vector<Eigen::Vector2d> free_point_coordinate;
         //2.再根据bresenham生成free点和occ点。
-//        std::cout<<occ_point_coordinate.x()<<" "<<occ_point_coordinate.y()<<std::endl;
 
         cslibs_math_2d::algorithms::Bresenham a0(cslibs_math_2d::Point2d(pose.getX(), pose.getY()), cslibs_math_2d::Point2d(p_odom.x(), p_odom.y()), cell_size);//TODO:直接使用cell_size_就不编译出错
         while (!a0.done()) {
             ++free_count;
-//            std::cout<<a0.x()<<","<<a0.y()<<std::endl;
             if (x_id_occ == a0.x() && y_id_occ == a0.y()) {
                 ++multi_counts;
                 updateOccGrids(occ_point_coordinate);
@@ -120,15 +118,26 @@ void SingleLayer::updateMap(const Pose2d &pose, const sensor_msgs::LaserScanCons
     std::cout << "all points:" << scan->ranges.size() << " occ: " << occ_count << " free:" << free_count << " continue:" << continue_count << " multi:" << multi_counts << std::endl;
 }
 void SingleLayer::updateMap(const Eigen::Matrix3d &pose, const sensor_msgs::LaserScanConstPtr &scan) {
-}
-void SingleLayer::updateMapFromBaseMap(const SingleLayer::Ptr &base_map, const Eigen::Matrix3d &pose, const sensor_msgs::LaserScanConstPtr &scan) {
-}
-void SingleLayer::updateMap(const SingleLayer::Ptr &base_layer) {
 
 }
+void SingleLayer::updateMapFromBaseMap(const SingleLayer::Ptr &base_map, const Eigen::Matrix3d &pose, const sensor_msgs::LaserScanConstPtr &scan) {
+
+}
+//从高精度的地图层来填充低精度的地图层。
+void SingleLayer::updateMap(const SingleLayer::Ptr &base_layer) {
+    int map_length_x =this_map_params_["map_grid_sizes_x"];
+    int map_length_y =this_map_params_["map_grid_sizes_y"];
+//    std::cout<<"In single layer!"<<std::endl;
+//    std::cout<<"x:"<<map_length_x<<" y:"<<map_length_y<<std::endl;
+    int magnification = this_map_params_["magnification"];
+
+//    for (int i = 0; i < map_length_x; ++i) {
+//        for (int j = 0; j < map_length_y; ++j) {
+//
+//        }
+//    }
+}
 void SingleLayer::updateFreeGrids(std::vector<Eigen::Vector2d> &free_grids_coor) {
-//    std::cout<<"max_x_:"<<max_x_<<" max_y_"<<max_y_<<std::endl;
-//    std::cout<<"min_x_:"<<min_x_<<" min_y_"<<min_y_<<std::endl;
     for (auto &coor:free_grids_coor) {
         if (coor.x() > max_x_) {
             coor.x() = max_x_;
@@ -142,7 +151,6 @@ void SingleLayer::updateFreeGrids(std::vector<Eigen::Vector2d> &free_grids_coor)
         else if (coor.y() < min_y_) {
             coor.y() = min_y_;
         }
-//        std::cout<<"x: "<<coor.x() + ori_x_<<" y:"<<coor.y() + ori_y_<<std::endl;
         int update_x = coor.x() + ori_x_;
         int update_y = coor.y() + ori_y_;
         if (grid_map_[update_x][update_y] == nullptr) {
@@ -169,8 +177,6 @@ void SingleLayer::updateOccGrids(Eigen::Vector2d &occ_grids_coor) {
     else if (occ_grids_coor.y() < min_y_) {
         occ_grids_coor.y() = min_y_;
     }
-//    std::cout<<"x: "<<occ_grids_coor.x() + ori_x_<<" y:"<<occ_grids_coor.y() + ori_y_<<std::endl;
-//    std::cout<<"ori_x_: "<<ori_x_<<" ori_y:"<<ori_y_<<std::endl;
     int update_x = occ_grids_coor.x() + ori_x_;
     int update_y = occ_grids_coor.y() + ori_y_;
 
@@ -208,8 +214,6 @@ nav_msgs::OccupancyGrid &SingleLayer::getOccupancyGridMap() {
             }
         }
     }
-//    std::cout << "ros_grid_map_.data size:" << ros_grid_map_.data.size() << std::endl;
-//    std::cout << "free size:" << free_count << " occ_count:" << occ_count << " null count:" << null_count << std::endl;
     return ros_grid_map_;
 }
 

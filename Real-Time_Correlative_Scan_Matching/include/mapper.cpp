@@ -24,7 +24,7 @@ void Mapper::loadMap(const std::string &img_dir, const std::string &cfg_dir) {
 
 std::vector<nav_msgs::OccupancyGrid> &Mapper::getROSOccGridMapVector() {
     for (int i = 0; i < map_params_["layers"]; ++i) {
-        multi_occupancy_grid_vec_[i] = multiple_resolution_map_->getMultipleResolutionMaps(i)->getOccupancyGridMap();
+        multi_occupancy_grid_vec_[i] = multiple_resolution_map_->getMultipleResolutionMaps(i)->getOccupancyGridMap();//第0层是最高分辨率的
     }
     return multi_occupancy_grid_vec_;
 }
