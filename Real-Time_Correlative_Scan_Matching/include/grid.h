@@ -5,6 +5,7 @@
 #define SRC_GRID_H
 #include <memory>
 #include <cmath>
+
 template<typename T>
 struct LogOdds {
     inline static T to(const T p) {
@@ -21,13 +22,19 @@ public:
     Grid(float pro_free, float pro_occ);
     void updateFree();
     void updateOcc();
+    void setGridLog(const float &value){
+        log_prior_ = value;
+    };
+    const inline float& getGridLog() const {
+        return log_prior_;
+    };
     inline float getGridPro() const {
         return LogOdds<float>::from(log_prior_);
     }
 private:
-    float pro_prior_,log_prior_;
-    float pro_occ_threshold_,pro_free_threshold_;
-    float log_occ_threshold_,log_free_threshold_;
+    float pro_prior_, log_prior_;
+    float pro_occ_threshold_, pro_free_threshold_;
+    float log_occ_threshold_, log_free_threshold_;
     const float log_free_, log_occ_;
 };
 

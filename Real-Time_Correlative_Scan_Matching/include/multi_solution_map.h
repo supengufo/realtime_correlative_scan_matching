@@ -29,7 +29,21 @@ public:
     void updateMap(const SingleLayer::Ptr &base_layer);
     void updateFreeGrids( std::vector<Eigen::Vector2d> &free_grids_coor);
     void updateOccGrids( Eigen::Vector2d &occ_grids_coor);
+    void setGridLogValue( Eigen::Vector2d &coordinate,const float &log_value);
+    float getGridLogValue( Eigen::Vector2d &coordinate);
+    float getGridLogValue( Eigen::Vector2d &coordinate,float& unknown);
+    float getGridProbValue(Eigen::Vector2d &coordinate);
+
     void updateMapFromBaseMap(const SingleLayer::Ptr &base_map, const Eigen::Matrix3d &pose, const sensor_msgs::LaserScanConstPtr &scan);
+
+    bool checkCoordinateValid(Eigen::Vector2d &coordinate){
+        if(coordinate.x()>=0||coordinate.x()<this_map_params_["map_grid_sizes_x"]||coordinate.y()>=0||coordinate.y()<this_map_params_["map_grid_sizes_y"]){
+            return true;
+        }else{
+            return false;
+        }
+    }
+
 //    void initScan(const sensor_msgs::LaserScanConstPtr &scan);
     nav_msgs::OccupancyGrid &getOccupancyGridMap();
 private:

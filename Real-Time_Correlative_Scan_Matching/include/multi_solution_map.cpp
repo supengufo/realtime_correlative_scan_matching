@@ -31,9 +31,11 @@ void MultipleResolutionMap::updateMultiResolutionMap(const Pose2d &pose, const s
         //TODO:0 . 先把点云的坐标转换到全局坐标系下。
         //TODO:1 . bresenham生成occ的坐标和free的坐标,把所有的坐标传进去进行更新。（base_map）
         if (i == 0) {
+//            std::cout << "update 1 layer" << std::endl;
             multi_resolution_map_[std::to_string(i)]->updateMap(pose, point_cloud);
         }
         else {
+//            std::cout << "update 2 layer" << std::endl;
             multi_resolution_map_[std::to_string(i)]->updateMap(multi_resolution_map_[std::to_string(i - 1)]);
         }
     }
@@ -88,7 +90,9 @@ void SingleLayer::updateMap(const Pose2d &pose, const sensor_msgs::LaserScanCons
             ++continue_count;
             continue;
         }
+
         double angle = ang_inc*i + ang_min;
+
         double cangle = cos(angle);
         double sangle = sin(angle);
         Eigen::Vector2d p_lidar(R*cangle, R*sangle);
@@ -100,7 +104,6 @@ void SingleLayer::updateMap(const Pose2d &pose, const sensor_msgs::LaserScanCons
         updateOccGrids(occ_point_coordinate);
         std::vector<Eigen::Vector2d> free_point_coordinate;
         //2.再根据bresenham生成free点和occ点。
-
         cslibs_math_2d::algorithms::Bresenham a0(cslibs_math_2d::Point2d(pose.getX(), pose.getY()), cslibs_math_2d::Point2d(p_odom.x(), p_odom.y()), cell_size);//TODO:直接使用cell_size_就不编译出错
         while (!a0.done()) {
             ++free_count;
@@ -115,7 +118,7 @@ void SingleLayer::updateMap(const Pose2d &pose, const sensor_msgs::LaserScanCons
         }
         updateFreeGrids(free_point_coordinate);
     }
-    std::cout << "all points:" << scan->ranges.size() << " occ: " << occ_count << " free:" << free_count << " continue:" << continue_count << " multi:" << multi_counts << std::endl;
+//    std::cout << "all points:" << scan->ranges.size() << " occ: " << occ_count << " free:" << free_count << " continue:" << continue_count << " multi:" << multi_counts << std::endl;
 }
 void SingleLayer::updateMap(const Eigen::Matrix3d &pose, const sensor_msgs::LaserScanConstPtr &scan) {
 
@@ -125,17 +128,31 @@ void SingleLayer::updateMapFromBaseMap(const SingleLayer::Ptr &base_map, const E
 }
 //从高精度的地图层来填充低精度的地图层。
 void SingleLayer::updateMap(const SingleLayer::Ptr &base_layer) {
-    int map_length_x =this_map_params_["map_grid_sizes_x"];
-    int map_length_y =this_map_params_["map_grid_sizes_y"];
+    int map_length_x = this_map_params_["map_grid_sizes_x"];
+    int map_length_y = this_map_params_["map_grid_sizes_y"];
 //    std::cout<<"In single layer!"<<std::endl;
 //    std::cout<<"x:"<<map_length_x<<" y:"<<map_length_y<<std::endl;
     int magnification = this_map_params_["magnification"];
+    //这里只更新了障碍物点，还有free栅格没有更新。
+    for (int i = 0; i < map_length_x; ++i) {
+        for (int j = 0; j < map_length_y; ++j) {
+            int this_map_x = i*magnification;
+            int this_map_y = j*magnification;
+            float log_max = std::numeric_limits<float>::min();
+            Eigen::Vector2d target_coor(this_map_x, this_map_y);
+            for (int k = 0; k < magnification; ++k) {
+                for (int l = 0; l < magnification; ++l) {
+                    Eigen::Vector2d tmp_coor(target_coor.x() + k, target_coor.y() + l);
+                    log_max = std::max(log_max, base_layer->getGridLogValue(tmp_coor));
+                }
+            }
 
-//    for (int i = 0; i < map_length_x; ++i) {
-//        for (int j = 0; j < map_length_y; ++j) {
-//
-//        }
-//    }
+            Eigen::Vector2d update_coor(i, j);
+//            std::cout << "before set value" << std::endl;
+            setGridLogValue(update_coor, log_max);
+//            std::cout << "after set value" << std::endl;
+        }
+    }
 }
 void SingleLayer::updateFreeGrids(std::vector<Eigen::Vector2d> &free_grids_coor) {
     for (auto &coor:free_grids_coor) {
@@ -187,7 +204,6 @@ void SingleLayer::updateOccGrids(Eigen::Vector2d &occ_grids_coor) {
         grid_map_[update_x][update_y]->updateOcc();
         return;
     }
-
     grid_map_[update_x][update_y]->updateOcc();
 }
 nav_msgs::OccupancyGrid &SingleLayer::getOccupancyGridMap() {
@@ -215,5 +231,44 @@ nav_msgs::OccupancyGrid &SingleLayer::getOccupancyGridMap() {
         }
     }
     return ros_grid_map_;
+}
+
+void SingleLayer::setGridLogValue(Eigen::Vector2d &coordinate, const float &log_value) {
+//    std::cout << grid_map_.size() << " " << grid_map_.front().size() <<" "<<coordinate.x()<<" "<<coordinate.y()<< std::endl;
+    if (!checkCoordinateValid(coordinate)) {
+//        std::cout << "越界！ In setGridLogValue() !" << std::endl;
+        return;
+    }
+
+    if (grid_map_[coordinate.x()][coordinate.y()] == nullptr) {
+        Grid::Ptr grid;
+        grid.reset(new Grid(0.4, 0.6));
+        grid->setGridLog(log_value);
+        grid_map_[coordinate.x()][coordinate.y()] = grid;
+        return;
+    }
+
+    grid_map_[coordinate.x()][coordinate.y()]->setGridLog(log_value);
+}
+
+float SingleLayer::getGridLogValue(Eigen::Vector2d &coordinate) {
+    if (!checkCoordinateValid(coordinate) || grid_map_[coordinate.x()][coordinate.y()] == nullptr) {
+        return std::numeric_limits<float>::min();
+    }
+    return grid_map_[coordinate.x()][coordinate.y()]->getGridLog();
+}
+float SingleLayer::getGridLogValue(Eigen::Vector2d &coordinate, float &unknown) {
+    if (!checkCoordinateValid(coordinate) || grid_map_[coordinate.x()][coordinate.y()] == nullptr) {
+        unknown = true;
+        return std::numeric_limits<float>::min();
+    }
+    return 0;
+}
+
+float SingleLayer::getGridProbValue(Eigen::Vector2d &coordinate) {
+    if (!checkCoordinateValid(coordinate) || grid_map_[coordinate.x()][coordinate.y()] == nullptr) {
+        return 0.5;
+    }
+    return grid_map_[coordinate.x()][coordinate.y()]->getGridPro();
 }
 

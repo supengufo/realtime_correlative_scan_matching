@@ -74,14 +74,19 @@ void getMapParams(const ros::NodeHandle &ph, std::unordered_map<std::string, dou
     map_params["layers"] = 2;
     map_params["magnification"] = 2;
 }
+
 void pubGridMap(const Mapper::Ptr &mapper, ros::Publisher &map_pub) {
     auto grid_map_msg = mapper->getROSOccGridMapVector().front();
+//    std::cout << "high map info:" << grid_map_msg.info.height << " " << grid_map_msg.info.width << " " << grid_map_msg.info.resolution << " " << grid_map_msg.data.size() << std::endl;
     map_pub.publish(grid_map_msg);
 };
+
 void pubGridMapLowResolution(const Mapper::Ptr &mapper, ros::Publisher &map_pub) {
     auto grid_map_msg = mapper->getROSOccGridMapVector().back();
+//    std::cout << "low map info:" << grid_map_msg.info.height << " " << grid_map_msg.info.width << " " << grid_map_msg.info.resolution << " " << grid_map_msg.data.size() << std::endl;
     map_pub.publish(grid_map_msg);
 };
+
 int main(int argc, char **argv) {
     ros::init(argc, argv, "RTCSM");
     ros::NodeHandle nh;
