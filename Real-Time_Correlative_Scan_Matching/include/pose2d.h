@@ -47,6 +47,12 @@ public:
         return Pose2d(x, y, theta);
     }
 
+    void setXYandYaw(double x, double y, double theta) {
+        x_ = x;
+        y_ = y;
+        theta_ = theta;
+    }
+
     void NormAngle(double &angle) {
         if (angle >= PI)
             angle -= 2.0*PI;

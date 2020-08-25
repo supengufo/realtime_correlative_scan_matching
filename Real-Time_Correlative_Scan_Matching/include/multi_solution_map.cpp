@@ -20,6 +20,7 @@ void MultipleResolutionMap::setupMultiResolutionMapParams() {
         each_map_params["map_ori_y"] = base_map_params_["map_ori_y"]/each_layer_magnification;
         each_map_params["resolution"] = base_map_params_["resolution"]*each_layer_magnification;
         each_map_params["search_step_xy"] = base_map_params_["search_step_xy"]*each_layer_magnification;
+        each_map_params["search_step_rad"] = base_map_params_["search_step_rad"]*each_layer_magnification;
 
         SingleLayer::Ptr SingleLayer(new class SingleLayer(each_map_params));
         multi_resolution_map_[std::to_string(i)] = SingleLayer;
@@ -28,20 +29,26 @@ void MultipleResolutionMap::setupMultiResolutionMapParams() {
 void MultipleResolutionMap::updateMultiResolutionMap(const Pose2d &pose, const sensor_msgs::LaserScanPtr &point_cloud) {
     int layers = base_map_params_["layers"];
     for (int i = 0; i < layers; ++i) {
-        //TODO:0 . 先把点云的坐标转换到全局坐标系下。
-        //TODO:1 . bresenham生成occ的坐标和free的坐标,把所有的坐标传进去进行更新。（base_map）
         if (i == 0) {
-//            std::cout << "update 1 layer" << std::endl;
             multi_resolution_map_[std::to_string(i)]->updateMap(pose, point_cloud);
         }
         else {
-//            std::cout << "update 2 layer" << std::endl;
             multi_resolution_map_[std::to_string(i)]->updateMap(multi_resolution_map_[std::to_string(i - 1)]);
         }
     }
 }
+
 void MultipleResolutionMap::updateMultiResolutionMap(const Eigen::Matrix3d &pose, const sensor_msgs::LaserScanPtr &point_cloud) {
 
+}
+
+const SingleLayer::Ptr MultipleResolutionMap::getTargetLayerPtr(int idx) {
+    if (idx > getMapLayers()) {
+        return nullptr;
+    }
+    else {
+        return multi_resolution_map_[std::to_string(idx)];
+    }
 }
 
 /**
@@ -146,11 +153,8 @@ void SingleLayer::updateMap(const SingleLayer::Ptr &base_layer) {
                     log_max = std::max(log_max, base_layer->getGridLogValue(tmp_coor));
                 }
             }
-
             Eigen::Vector2d update_coor(i, j);
-//            std::cout << "before set value" << std::endl;
             setGridLogValue(update_coor, log_max);
-//            std::cout << "after set value" << std::endl;
         }
     }
 }
@@ -239,7 +243,6 @@ void SingleLayer::setGridLogValue(Eigen::Vector2d &coordinate, const float &log_
 //        std::cout << "越界！ In setGridLogValue() !" << std::endl;
         return;
     }
-
     if (grid_map_[coordinate.x()][coordinate.y()] == nullptr) {
         Grid::Ptr grid;
         grid.reset(new Grid(0.4, 0.6));
@@ -257,6 +260,7 @@ float SingleLayer::getGridLogValue(Eigen::Vector2d &coordinate) {
     }
     return grid_map_[coordinate.x()][coordinate.y()]->getGridLog();
 }
+
 float SingleLayer::getGridLogValue(Eigen::Vector2d &coordinate, float &unknown) {
     if (!checkCoordinateValid(coordinate) || grid_map_[coordinate.x()][coordinate.y()] == nullptr) {
         unknown = true;
@@ -270,5 +274,72 @@ float SingleLayer::getGridProbValue(Eigen::Vector2d &coordinate) {
         return 0.5;
     }
     return grid_map_[coordinate.x()][coordinate.y()]->getGridPro();
+}
+
+bool SingleLayer::checkCoordinateValid(Eigen::Vector2d &coordinate) {
+    if(coordinate.x()>=0||coordinate.x()<this_map_params_["map_grid_sizes_x"]||coordinate.y()>=0||coordinate.y()<this_map_params_["map_grid_sizes_y"]){
+        return true;
+    }else{
+        return false;
+    }
+}
+
+void SingleLayer::getSearchParameters(const Pose2d &pose, SingleLayer::SearchParameters &search_parameters) {
+    int xy_step_length = this_map_params_["search_step_xy"];
+    double angle_step_length = this_map_params_["search_step_rad"];
+    search_parameters.generateSearchParameters(pose,xy_step_length,angle_step_length);
+}
+
+double SingleLayer::RealTimeCorrelativeScanMatch(const sensor_msgs::LaserScanPtr &point_cloud, Pose2d &pose_estimate) {
+    SearchParameters searchParameters;
+    getSearchParameters(pose_estimate, searchParameters);
+    auto candidates = searchParameters.candidates;
+    Pose2d best_candidate;
+    double max_score = 0;
+    for (const auto &candidate:candidates) {
+        double tmp_score = RealTimeCorrelativeScanMatchCore(point_cloud, candidate);
+        if (tmp_score > max_score) {
+            max_score = tmp_score;
+            best_candidate = candidate;
+        }
+    }
+    pose_estimate = best_candidate;
+    return max_score;
+}
+
+double SingleLayer::RealTimeCorrelativeScanMatchCore(const sensor_msgs::LaserScanPtr &scan, const Pose2d &pose_estimate) {
+    const double &ang_min = scan->angle_min;
+    const double &ang_inc = scan->angle_increment;
+    const double &range_max = scan->range_max;
+    const double &range_min = scan->range_min;
+
+    const double &cell_size = this->this_map_params_["resolution"];
+    std::vector<std::pair<int, int>> free_cordinates;
+    std::vector<std::pair<int, int>> occ_cordinates;
+
+    double score = 0;
+    for (size_t i = 0; i < scan->ranges.size(); i++) {
+        double R = scan->ranges.at(i);
+        if (R > range_max || R < range_min) {
+            continue;
+        }
+        double angle = ang_inc*i + ang_min;
+        double cangle = cos(angle);
+        double sangle = sin(angle);
+        Eigen::Vector2d p_lidar(R*cangle, R*sangle);
+        Eigen::Vector2d p_odom = pose_estimate*p_lidar;
+        int x_id_occ = p_odom.x() > 0 ? floor(p_odom.x()/cell_size) : ceil(p_odom.x()/cell_size);
+        int y_id_occ = p_odom.y() > 0 ? floor(p_odom.y()/cell_size) : ceil(p_odom.y()/cell_size);
+//            Eigen::Vector2d occ_point_coordinate = {x_id_occ, y_id_occ};
+        //避免越界
+        if (x_id_occ > min_x_ && x_id_occ < max_x_ && y_id_occ > min_y_ && y_id_occ < max_y_) {
+            x_id_occ = x_id_occ + ori_x_;
+            y_id_occ = y_id_occ + ori_y_;
+            if (grid_map_[x_id_occ][y_id_occ] != nullptr) {
+                score += grid_map_[x_id_occ][y_id_occ]->getGridLog();
+            }
+        }
+    }
+    return score;
 }
 

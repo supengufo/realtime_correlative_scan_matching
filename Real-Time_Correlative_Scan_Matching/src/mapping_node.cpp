@@ -122,13 +122,12 @@ int main(int argc, char **argv) {
     bool init = false;
 //    Eigen::Matrix3d pose_estimate_cur, pose_estimate_pre;
     Pose2d pose_estimate_cur, pose_estimate_pre;
-
     while (ros::ok() && bag_it != bag_view.end()) {
         const auto scan = bag_it->instantiate<sensor_msgs::LaserScan>();
         scan_pub.publish(scan);
+        Pose2d pose_estimate = Pose2d(0, 0, 0);
 
 //        Eigen::Matrix3d pose_estimate;
-        Pose2d pose_estimate = Pose2d(0, 0, 0);
         if (!init) {
 //            pose_estimate = Eigen::Matrix3d::Identity();
 //            pose_estimate = Pose2d(0, 0, 0);
@@ -136,11 +135,10 @@ int main(int argc, char **argv) {
             init = true;
         }
         else {
-//            double score = mapper->RealTimeCorrelativeScanMatch(pose_estimate_pre, scan, pose_estimate);
             mapper->RealTimeCorrelativeScanMatch(pose_estimate_pre, scan, pose_estimate);
             mapper->updateMultiSolutionMap(pose_estimate, scan);
         }
-        //
+        cout << pose_estimate.getX() << " " << pose_estimate.getY() << " " << pose_estimate.getYaw() << endl;
         //TODO:2.根据计算得到的pose，发布odom
         pubOdom(odom_pub, pose_estimate);
         pubTF(odom_broadcaster, pose_estimate);
@@ -148,7 +146,7 @@ int main(int argc, char **argv) {
         pubGridMapLowResolution(mapper, map_pub_low_resolution);
         pose_estimate_cur = pose_estimate;
         pose_estimate_pre = pose_estimate_cur;
-//        ++bag_it;
+        ++bag_it;
         loop_rate.sleep();
     }
 

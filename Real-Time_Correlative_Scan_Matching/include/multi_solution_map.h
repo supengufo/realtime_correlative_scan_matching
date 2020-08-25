@@ -19,7 +19,30 @@
 #include <cslibs_math_2d/linear/transform.hpp>
 #include "pose2d.h"
 
+
 class SingleLayer {
+public:
+    struct SearchParameters {
+        int min_x, min_y, max_x, max_y;
+        double min_rad, max_rad;
+        std::vector<Pose2d> candidates;
+        void generateSearchParameters(const Pose2d &pose, int xy_step_length, double angle_step_length) {
+            for (int angle = -angle_step_length; angle <= angle_step_length; ++angle) {
+                for (int x = -xy_step_length; x <= xy_step_length; ++x) {
+                    for (int y = -xy_step_length; y < xy_step_length; ++y) {
+                        candidates.emplace_back(Pose2d(x, y, angle));
+                    }
+                }
+            }
+        }
+
+        SearchParameters(){};
+        SearchParameters(const Pose2d &pose, int xy_step_length, double angle_step_length) {
+            generateSearchParameters(pose, xy_step_length, angle_step_length);
+        }
+
+    };
+
 public:
     typedef std::shared_ptr<SingleLayer> Ptr;
     explicit SingleLayer(std::unordered_map<std::string, double> &base_map_params);
@@ -27,31 +50,27 @@ public:
     void updateMap(const Eigen::Matrix3d &pose, const sensor_msgs::LaserScanConstPtr &scan);
     void updateMap(const Pose2d &pose, const sensor_msgs::LaserScanConstPtr &scan);
     void updateMap(const SingleLayer::Ptr &base_layer);
-    void updateFreeGrids( std::vector<Eigen::Vector2d> &free_grids_coor);
-    void updateOccGrids( Eigen::Vector2d &occ_grids_coor);
-    void setGridLogValue( Eigen::Vector2d &coordinate,const float &log_value);
-    float getGridLogValue( Eigen::Vector2d &coordinate);
-    float getGridLogValue( Eigen::Vector2d &coordinate,float& unknown);
+    void updateFreeGrids(std::vector<Eigen::Vector2d> &free_grids_coor);
+    void updateOccGrids(Eigen::Vector2d &occ_grids_coor);
+    void setGridLogValue(Eigen::Vector2d &coordinate, const float &log_value);
+    float getGridLogValue(Eigen::Vector2d &coordinate);
+    float getGridLogValue(Eigen::Vector2d &coordinate, float &unknown);
     float getGridProbValue(Eigen::Vector2d &coordinate);
-
     void updateMapFromBaseMap(const SingleLayer::Ptr &base_map, const Eigen::Matrix3d &pose, const sensor_msgs::LaserScanConstPtr &scan);
+    bool checkCoordinateValid(Eigen::Vector2d &coordinate);
 
-    bool checkCoordinateValid(Eigen::Vector2d &coordinate){
-        if(coordinate.x()>=0||coordinate.x()<this_map_params_["map_grid_sizes_x"]||coordinate.y()>=0||coordinate.y()<this_map_params_["map_grid_sizes_y"]){
-            return true;
-        }else{
-            return false;
-        }
-    }
+    double RealTimeCorrelativeScanMatch(const sensor_msgs::LaserScanPtr &point_cloud, Pose2d &pose_estimate);
 
-//    void initScan(const sensor_msgs::LaserScanConstPtr &scan);
+    double RealTimeCorrelativeScanMatchCore(const sensor_msgs::LaserScanPtr &scan, const Pose2d &pose_estimate);
     nav_msgs::OccupancyGrid &getOccupancyGridMap();
+    void getSearchParameters(const Pose2d &pose, SearchParameters &search_parameters);
+
 private:
     nav_msgs::OccupancyGrid ros_grid_map_;
     std::vector<std::vector<Grid::Ptr>> grid_map_;
     int max_x_, max_y_;
     int min_x_, min_y_;
-    int ori_x_,ori_y_;
+    int ori_x_, ori_y_;
     std::unordered_map<std::string, double> this_map_params_;
 };
 
@@ -62,11 +81,9 @@ public:
     void setupMultiResolutionMapParams();
     void updateMultiResolutionMap(const Pose2d &pose, const sensor_msgs::LaserScanPtr &point_cloud);
     void updateMultiResolutionMap(const Eigen::Matrix3d &pose, const sensor_msgs::LaserScanPtr &point_cloud);;
-
     inline int getMapLayers() {
         return int(base_map_params_["layers"]);
     }
-
     inline int getMapMagnification() {
         return int(base_map_params_["magnification"]);
     }
@@ -76,9 +93,9 @@ public:
     inline const SingleLayer::Ptr &getMultipleResolutionMaps(int idx) {
         return multi_resolution_map_[std::to_string(idx)];
     }
+    const SingleLayer::Ptr getTargetLayerPtr(int idx);
 private:
     void updateBaseLayer(const Eigen::Matrix3d &pose, const sensor_msgs::LaserScanPtr &point_cloud) {
-
     }
     std::unordered_map<std::string, double> base_map_params_;
     std::unordered_map<std::string, SingleLayer::Ptr> multi_resolution_map_;

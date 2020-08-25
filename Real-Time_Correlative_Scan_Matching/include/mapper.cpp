@@ -1,7 +1,6 @@
 //
 // Created by nrsl on 2020/8/18.
 //
-
 #include "mapper.h"
 #include "grid.h"
 
@@ -45,8 +44,16 @@ double Mapper::RealTimeCorrelativeScanMatch(const Eigen::Matrix3d &initial_pose_
 }
 
 double Mapper::RealTimeCorrelativeScanMatch(const Pose2d &initial_pose_estimate, const sensor_msgs::LaserScanPtr &point_cloud, Pose2d &pose_estimate) {
-    return 0;
-
+    //先从最外层的layer开始查找。生成一个最好的search_params;
+    int layers = getLayersCount();
+    //从最低分辨率的地图开始查找。
+    pose_estimate = initial_pose_estimate;
+    double score = 0;
+    for (int i = layers - 1; i >= 0; --i) {
+        auto map_layer = multiple_resolution_map_->getTargetLayerPtr(i);
+        score = map_layer->RealTimeCorrelativeScanMatch(point_cloud, pose_estimate);
+    }
+    return score;
 }
 
 //double Mapper::RealTimeCorrelativeScanMatch(const Eigen::Matrix3d &initial_pose_estimate, const sensor_msgs::LaserScanPtr &point_cloud, const MultipleResolutionMap::Ptr &multi_reso_probability_grid_map, Eigen::Matrix3d &&pose_estimate) {

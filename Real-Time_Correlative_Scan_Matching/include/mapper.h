@@ -24,6 +24,7 @@ public:
         int col;
     };
 
+
 public:
     typedef std::shared_ptr<Mapper> Ptr;
 //    typedef std::shared_ptr<Mapper> ConstPtr;
@@ -38,12 +39,16 @@ public:
     void updateMultiSolutionMap(const Eigen::Matrix3d &pose_estimate, const sensor_msgs::LaserScanPtr &point_cloud);
     void updateMultiSolutionMap(const Pose2d &pose_estimate, const sensor_msgs::LaserScanPtr &point_cloud);
 
-    double RealTimeCorrelativeScanMatch(const Eigen::Matrix3d& initial_pose_estimate,
-                                        const sensor_msgs::LaserScanPtr & point_cloud,
-                                        Eigen::Matrix3d& pose_estimate);
-    double RealTimeCorrelativeScanMatch(const Pose2d& initial_pose_estimate,
-                                        const sensor_msgs::LaserScanPtr & point_cloud,
-                                        Pose2d& pose_estimate);;
+    double RealTimeCorrelativeScanMatch(const Eigen::Matrix3d &initial_pose_estimate,
+                                        const sensor_msgs::LaserScanPtr &point_cloud,
+                                        Eigen::Matrix3d &pose_estimate);
+    double RealTimeCorrelativeScanMatch(const Pose2d &initial_pose_estimate,
+                                        const sensor_msgs::LaserScanPtr &point_cloud,
+                                        Pose2d &pose_estimate);;
+    int getLayersCount() {
+        return multiple_resolution_map_->getMapLayers();
+    }
+
 private:
     MultipleResolutionMap::Ptr multiple_resolution_map_;
     std::unordered_map<std::string, double> map_params_;
