@@ -138,7 +138,7 @@ void SingleLayer::updateMap(const SingleLayer::Ptr &base_layer) {
         for (int j = 0; j < map_length_y; ++j) {
             int this_map_x = i*magnification;
             int this_map_y = j*magnification;
-            float log_max = std::numeric_limits<float>::min();
+            float log_max = -1000; //
             Eigen::Vector2d target_coor(this_map_x, this_map_y);
             for (int k = 0; k < magnification; ++k) {
                 for (int l = 0; l < magnification; ++l) {
@@ -253,16 +253,16 @@ void SingleLayer::setGridLogValue(Eigen::Vector2d &coordinate, const float &log_
 
 float SingleLayer::getGridLogValue(Eigen::Vector2d &coordinate) {
     if (!checkCoordinateValid(coordinate) || grid_map_[coordinate.x()][coordinate.y()] == nullptr) {
-        return std::numeric_limits<float>::min();
+        return 0; //未知区域
     }
     return grid_map_[coordinate.x()][coordinate.y()]->getGridLog();
 }
 float SingleLayer::getGridLogValue(Eigen::Vector2d &coordinate, float &unknown) {
     if (!checkCoordinateValid(coordinate) || grid_map_[coordinate.x()][coordinate.y()] == nullptr) {
         unknown = true;
-        return std::numeric_limits<float>::min();
+        return 0;
     }
-    return 0;
+    return grid_map_[coordinate.x()][coordinate.y()]->getGridLog();
 }
 
 float SingleLayer::getGridProbValue(Eigen::Vector2d &coordinate) {
