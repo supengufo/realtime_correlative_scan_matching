@@ -1,7 +1,6 @@
 //
 // Created by nrsl on 2020/8/19.
 //
-
 #ifndef SRC_MULTI_SOLUTION_MAP_H
 #define SRC_MULTI_SOLUTION_MAP_H
 #include "vector"
@@ -19,26 +18,28 @@
 #include <cslibs_math_2d/linear/transform.hpp>
 #include "pose2d.h"
 
-
 class SingleLayer {
 public:
     struct SearchParameters {
         int min_x, min_y, max_x, max_y;
         double min_rad, max_rad;
         std::vector<Pose2d> candidates;
-        void generateSearchParameters(const Pose2d &pose, int xy_step_length, double angle_step_length) {
-            for (int angle = -angle_step_length; angle <= angle_step_length; ++angle) {
-                for (int x = -xy_step_length; x <= xy_step_length; ++x) {
-                    for (int y = -xy_step_length; y < xy_step_length; ++y) {
-                        candidates.emplace_back(Pose2d(x, y, angle));
+        void generateSearchParameters(const Pose2d &pose, double xy_step_length, double angle_step_length, int search_steps) {
+            for (int angle = -search_steps; angle <= search_steps; ++angle) {
+                for (int x = -search_steps; x <= search_steps; ++x) {
+                    for (int y = -search_steps; y < search_steps; ++y) {
+                        double x_coor = pose.getX() + xy_step_length*double(x);
+                        double y_coor = pose.getY() + xy_step_length*double(y);
+                        double yaw_coor = pose.getYaw() + angle_step_length*angle;
+                        Pose2d pose_tmp(x_coor, y_coor, yaw_coor);
+                        candidates.push_back(pose_tmp);
                     }
                 }
             }
         }
-
-        SearchParameters(){};
-        SearchParameters(const Pose2d &pose, int xy_step_length, double angle_step_length) {
-            generateSearchParameters(pose, xy_step_length, angle_step_length);
+        SearchParameters() {};
+        SearchParameters(const Pose2d &pose, double xy_step_length, double angle_step_length, int search_steps) {
+            generateSearchParameters(pose, xy_step_length, angle_step_length, search_steps);
         }
 
     };

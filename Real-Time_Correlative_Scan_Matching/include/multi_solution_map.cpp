@@ -3,14 +3,12 @@
 //
 
 #include "multi_solution_map.h"
-//multiple layer
 MultipleResolutionMap::MultipleResolutionMap(std::unordered_map<std::string, double> &map_params) :
         base_map_params_(map_params) {
     setupMultiResolutionMapParams();
 }
 void MultipleResolutionMap::setupMultiResolutionMapParams() {
     for (int i = 0; i < base_map_params_["layers"]; ++i) {
-
         int each_layer_magnification = std::pow(base_map_params_["magnification"], i);
         std::unordered_map<std::string, double> each_map_params = base_map_params_;
         each_map_params["magnification"] = each_layer_magnification;
@@ -21,7 +19,7 @@ void MultipleResolutionMap::setupMultiResolutionMapParams() {
         each_map_params["resolution"] = base_map_params_["resolution"]*each_layer_magnification;
         each_map_params["search_step_xy"] = base_map_params_["search_step_xy"]*each_layer_magnification;
         each_map_params["search_step_rad"] = base_map_params_["search_step_rad"]*each_layer_magnification;
-
+        each_map_params["search_steps"] = base_map_params_["search_steps"];
         SingleLayer::Ptr SingleLayer(new class SingleLayer(each_map_params));
         multi_resolution_map_[std::to_string(i)] = SingleLayer;
     }
@@ -76,19 +74,14 @@ void SingleLayer::initOccupancyGridMsg() {
     min_y_ = -max_y_;
 }
 void SingleLayer::updateMap(const Pose2d &pose, const sensor_msgs::LaserScanConstPtr &scan) {
-    /* 获取激光的信息 */
     const double &ang_min = scan->angle_min;
-//    const double &ang_max = scan->angle_max;
     const double &ang_inc = scan->angle_increment;
     const double &range_max = scan->range_max;
     const double &range_min = scan->range_min;
-
-    /* 设置遍历的步长，沿着一条激光线遍历 */
     const double &cell_size = this->this_map_params_["resolution"];
     std::vector<std::pair<int, int>> free_cordinates;
     std::vector<std::pair<int, int>> occ_cordinates;
 
-    //1.先把scan根据pose转换到当前坐标下。
     int free_count = 0, occ_count = 0, continue_count = 0, multi_counts = 0;
 
     for (size_t i = 0; i < scan->ranges.size(); i++) {
@@ -97,9 +90,7 @@ void SingleLayer::updateMap(const Pose2d &pose, const sensor_msgs::LaserScanCons
             ++continue_count;
             continue;
         }
-
         double angle = ang_inc*i + ang_min;
-
         double cangle = cos(angle);
         double sangle = sin(angle);
         Eigen::Vector2d p_lidar(R*cangle, R*sangle);
@@ -110,7 +101,6 @@ void SingleLayer::updateMap(const Pose2d &pose, const sensor_msgs::LaserScanCons
         Eigen::Vector2d occ_point_coordinate = {x_id_occ, y_id_occ};
         updateOccGrids(occ_point_coordinate);
         std::vector<Eigen::Vector2d> free_point_coordinate;
-        //2.再根据bresenham生成free点和occ点。
         cslibs_math_2d::algorithms::Bresenham a0(cslibs_math_2d::Point2d(pose.getX(), pose.getY()), cslibs_math_2d::Point2d(p_odom.x(), p_odom.y()), cell_size);//TODO:直接使用cell_size_就不编译出错
         while (!a0.done()) {
             ++free_count;
@@ -125,7 +115,6 @@ void SingleLayer::updateMap(const Pose2d &pose, const sensor_msgs::LaserScanCons
         }
         updateFreeGrids(free_point_coordinate);
     }
-//    std::cout << "all points:" << scan->ranges.size() << " occ: " << occ_count << " free:" << free_count << " continue:" << continue_count << " multi:" << multi_counts << std::endl;
 }
 void SingleLayer::updateMap(const Eigen::Matrix3d &pose, const sensor_msgs::LaserScanConstPtr &scan) {
 
@@ -133,14 +122,10 @@ void SingleLayer::updateMap(const Eigen::Matrix3d &pose, const sensor_msgs::Lase
 void SingleLayer::updateMapFromBaseMap(const SingleLayer::Ptr &base_map, const Eigen::Matrix3d &pose, const sensor_msgs::LaserScanConstPtr &scan) {
 
 }
-//从高精度的地图层来填充低精度的地图层。
 void SingleLayer::updateMap(const SingleLayer::Ptr &base_layer) {
     int map_length_x = this_map_params_["map_grid_sizes_x"];
     int map_length_y = this_map_params_["map_grid_sizes_y"];
-//    std::cout<<"In single layer!"<<std::endl;
-//    std::cout<<"x:"<<map_length_x<<" y:"<<map_length_y<<std::endl;
     int magnification = this_map_params_["magnification"];
-    //这里只更新了障碍物点，还有free栅格没有更新。
     for (int i = 0; i < map_length_x; ++i) {
         for (int j = 0; j < map_length_y; ++j) {
             int this_map_x = i*magnification;
@@ -238,9 +223,7 @@ nav_msgs::OccupancyGrid &SingleLayer::getOccupancyGridMap() {
 }
 
 void SingleLayer::setGridLogValue(Eigen::Vector2d &coordinate, const float &log_value) {
-//    std::cout << grid_map_.size() << " " << grid_map_.front().size() <<" "<<coordinate.x()<<" "<<coordinate.y()<< std::endl;
     if (!checkCoordinateValid(coordinate)) {
-//        std::cout << "越界！ In setGridLogValue() !" << std::endl;
         return;
     }
     if (grid_map_[coordinate.x()][coordinate.y()] == nullptr) {
@@ -277,24 +260,28 @@ float SingleLayer::getGridProbValue(Eigen::Vector2d &coordinate) {
 }
 
 bool SingleLayer::checkCoordinateValid(Eigen::Vector2d &coordinate) {
-    if(coordinate.x()>=0||coordinate.x()<this_map_params_["map_grid_sizes_x"]||coordinate.y()>=0||coordinate.y()<this_map_params_["map_grid_sizes_y"]){
+    if (coordinate.x() >= 0 || coordinate.x() < this_map_params_["map_grid_sizes_x"] || coordinate.y() >= 0 || coordinate.y() < this_map_params_["map_grid_sizes_y"]) {
         return true;
-    }else{
+    }
+    else {
         return false;
     }
 }
 
 void SingleLayer::getSearchParameters(const Pose2d &pose, SingleLayer::SearchParameters &search_parameters) {
-    int xy_step_length = this_map_params_["search_step_xy"];
+    double xy_step_length = this_map_params_["search_step_xy"];
     double angle_step_length = this_map_params_["search_step_rad"];
-    search_parameters.generateSearchParameters(pose,xy_step_length,angle_step_length);
+    int search_steps = this_map_params_["search_steps"];
+    search_parameters.generateSearchParameters(pose, xy_step_length, angle_step_length, search_steps);
 }
 
 double SingleLayer::RealTimeCorrelativeScanMatch(const sensor_msgs::LaserScanPtr &point_cloud, Pose2d &pose_estimate) {
     SearchParameters searchParameters;
     getSearchParameters(pose_estimate, searchParameters);
     auto candidates = searchParameters.candidates;
+
     Pose2d best_candidate;
+
     double max_score = 0;
     for (const auto &candidate:candidates) {
         double tmp_score = RealTimeCorrelativeScanMatchCore(point_cloud, candidate);
@@ -330,8 +317,6 @@ double SingleLayer::RealTimeCorrelativeScanMatchCore(const sensor_msgs::LaserSca
         Eigen::Vector2d p_odom = pose_estimate*p_lidar;
         int x_id_occ = p_odom.x() > 0 ? floor(p_odom.x()/cell_size) : ceil(p_odom.x()/cell_size);
         int y_id_occ = p_odom.y() > 0 ? floor(p_odom.y()/cell_size) : ceil(p_odom.y()/cell_size);
-//            Eigen::Vector2d occ_point_coordinate = {x_id_occ, y_id_occ};
-        //避免越界
         if (x_id_occ > min_x_ && x_id_occ < max_x_ && y_id_occ > min_y_ && y_id_occ < max_y_) {
             x_id_occ = x_id_occ + ori_x_;
             y_id_occ = y_id_occ + ori_y_;

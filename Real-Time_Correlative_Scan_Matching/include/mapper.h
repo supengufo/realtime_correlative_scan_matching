@@ -32,8 +32,8 @@ public:
 
     std::vector<nav_msgs::OccupancyGrid> &getROSOccGridMapVector();
 
-    void saveMap(const std::string &img_dir, const std::string &cfg_dir); // 保存地图，图片加配置文件的形式
-    void loadMap(const std::string &img_dir, const std::string &cfg_dir); // TODO 加载地图
+    void saveMap(const std::string &img_dir, const std::string &cfg_dir); //
+    void loadMap(const std::string &img_dir, const std::string &cfg_dir); //
 //    void init(const Eigen::Matrix3d &pose_estimate,const sensor_msgs::LaserScanPtr & point_cloud);
 
     void updateMultiSolutionMap(const Eigen::Matrix3d &pose_estimate, const sensor_msgs::LaserScanPtr &point_cloud);

@@ -29,24 +29,18 @@ std::vector<nav_msgs::OccupancyGrid> &Mapper::getROSOccGridMapVector() {
 }
 
 void Mapper::updateMultiSolutionMap(const Eigen::Matrix3d &pose_estimate, const sensor_msgs::LaserScanPtr &point_cloud) {
-    //for循环更新multiple_resolution_map_
     multiple_resolution_map_->updateMultiResolutionMap(pose_estimate, point_cloud);
-
 }
 void Mapper::updateMultiSolutionMap(const Pose2d &pose_estimate, const sensor_msgs::LaserScanPtr &point_cloud) {
     multiple_resolution_map_->updateMultiResolutionMap(pose_estimate, point_cloud);
-
 }
 
 double Mapper::RealTimeCorrelativeScanMatch(const Eigen::Matrix3d &initial_pose_estimate, const sensor_msgs::LaserScanPtr &point_cloud, Eigen::Matrix3d &pose_estimate) {
-
     return 0;
 }
 
 double Mapper::RealTimeCorrelativeScanMatch(const Pose2d &initial_pose_estimate, const sensor_msgs::LaserScanPtr &point_cloud, Pose2d &pose_estimate) {
-    //先从最外层的layer开始查找。生成一个最好的search_params;
     int layers = getLayersCount();
-    //从最低分辨率的地图开始查找。
     pose_estimate = initial_pose_estimate;
     double score = 0;
     for (int i = layers - 1; i >= 0; --i) {

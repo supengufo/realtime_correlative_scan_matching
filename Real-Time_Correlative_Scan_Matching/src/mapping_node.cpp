@@ -16,16 +16,15 @@
 //STL
 #include <unordered_map>
 #include <iostream>
+#include <ctime>
+
 //Eigen
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Eigen>
 using namespace std;
 typedef boost::shared_ptr<tf::TransformBroadcaster> tf_TransformBroadcaster_Ptr;
-
-
 void pubTF(tf_TransformBroadcaster_Ptr &tf_pub, const Pose2d &robot_pose) {
     geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(robot_pose.getYaw());
-    //first, we'll publish the transform over tf
     geometry_msgs::TransformStamped odom_trans;
     odom_trans.header.stamp = ros::Time::now();
     odom_trans.header.frame_id = "map";
@@ -35,8 +34,6 @@ void pubTF(tf_TransformBroadcaster_Ptr &tf_pub, const Pose2d &robot_pose) {
     odom_trans.transform.translation.y = robot_pose.getY();
     odom_trans.transform.translation.z = 0.0;
     odom_trans.transform.rotation = odom_quat;
-
-    //send the transform
     tf_pub->sendTransform(odom_trans);
 }
 void pubOdom(const ros::Publisher &publisher, const Pose2d &robot_pose) {
@@ -71,19 +68,18 @@ void getMapParams(const ros::NodeHandle &ph, std::unordered_map<std::string, dou
     map_params["resolution"] = 0.05;
     map_params["search_step_xy"] = 0.01;
     map_params["search_step_rad"] = 0.005;
+    map_params["search_steps"] = 5;
     map_params["layers"] = 2;
     map_params["magnification"] = 2;
 }
 
 void pubGridMap(const Mapper::Ptr &mapper, ros::Publisher &map_pub) {
     auto grid_map_msg = mapper->getROSOccGridMapVector().front();
-//    std::cout << "high map info:" << grid_map_msg.info.height << " " << grid_map_msg.info.width << " " << grid_map_msg.info.resolution << " " << grid_map_msg.data.size() << std::endl;
     map_pub.publish(grid_map_msg);
 };
 
 void pubGridMapLowResolution(const Mapper::Ptr &mapper, ros::Publisher &map_pub) {
     auto grid_map_msg = mapper->getROSOccGridMapVector().back();
-//    std::cout << "low map info:" << grid_map_msg.info.height << " " << grid_map_msg.info.width << " " << grid_map_msg.info.resolution << " " << grid_map_msg.data.size() << std::endl;
     map_pub.publish(grid_map_msg);
 };
 
@@ -120,17 +116,14 @@ int main(int argc, char **argv) {
     ros::Rate loop_rate(10);
     Mapper::Ptr mapper(new Mapper(map_params));
     bool init = false;
-//    Eigen::Matrix3d pose_estimate_cur, pose_estimate_pre;
     Pose2d pose_estimate_cur, pose_estimate_pre;
     while (ros::ok() && bag_it != bag_view.end()) {
+        std::cout << "---------------------------------------" << std::endl;
+        clock_t time_start=clock();
         const auto scan = bag_it->instantiate<sensor_msgs::LaserScan>();
         scan_pub.publish(scan);
         Pose2d pose_estimate = Pose2d(0, 0, 0);
-
-//        Eigen::Matrix3d pose_estimate;
         if (!init) {
-//            pose_estimate = Eigen::Matrix3d::Identity();
-//            pose_estimate = Pose2d(0, 0, 0);
             mapper->updateMultiSolutionMap(pose_estimate, scan);
             init = true;
         }
@@ -138,8 +131,10 @@ int main(int argc, char **argv) {
             mapper->RealTimeCorrelativeScanMatch(pose_estimate_pre, scan, pose_estimate);
             mapper->updateMultiSolutionMap(pose_estimate, scan);
         }
-        cout << pose_estimate.getX() << " " << pose_estimate.getY() << " " << pose_estimate.getYaw() << endl;
-        //TODO:2.根据计算得到的pose，发布odom
+
+        std::cout << "pose_estimate x y yaw : " << pose_estimate.getX() << " " << pose_estimate.getY() << " " << pose_estimate.getYaw() << std::endl;
+        clock_t time_end=clock();
+        cout<<"time use:"<<1000*(time_end-time_start)/(double)CLOCKS_PER_SEC<<"ms"<<endl;
         pubOdom(odom_pub, pose_estimate);
         pubTF(odom_broadcaster, pose_estimate);
         pubGridMap(mapper, map_pub);
@@ -149,5 +144,4 @@ int main(int argc, char **argv) {
         ++bag_it;
         loop_rate.sleep();
     }
-
 }
