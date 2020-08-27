@@ -12,6 +12,7 @@
 //self
 #include "mapper.h"
 #include "pose2d.h"
+#include "parameters.h"
 //#include <gperftools/profiler.h>
 //STL
 #include <unordered_map>
