@@ -4,10 +4,18 @@
 #include "mapper.h"
 #include "grid.h"
 
-Mapper::Mapper(const std::unordered_map<std::string, double> &map_params) : map_params_(map_params) {
+//Mapper::Mapper(const std::unordered_map<std::string, double> &map_params) : map_params_(map_params) {
+//    multiple_resolution_map_.reset(new MultipleResolutionMap(map_params_));
+//    multi_occupancy_grid_vec_.resize(map_params_["layers"]);
+//}
+
+Mapper::Mapper(const MapParams &map_params): map_params_(map_params) {
     multiple_resolution_map_.reset(new MultipleResolutionMap(map_params_));
-    multi_occupancy_grid_vec_.resize(map_params_["layers"]);
+    std::cout << "map_params_:" << map_params_.layers << std::endl;
+
+    multi_occupancy_grid_vec_.resize(map_params_.layers);
 }
+
 //
 //void Mapper::init(const Eigen::Matrix3d &pose_estimate,const sensor_msgs::LaserScanPtr &point_cloud) {
 //    multiple_resolution_map_->initMultiResolutionMap(point_cloud);
@@ -22,7 +30,7 @@ void Mapper::loadMap(const std::string &img_dir, const std::string &cfg_dir) {
 }
 
 std::vector<nav_msgs::OccupancyGrid> &Mapper::getROSOccGridMapVector() {
-    for (int i = 0; i < map_params_["layers"]; ++i) {
+    for (int i = 0; i < map_params_.layers; ++i) {
         multi_occupancy_grid_vec_[i] = multiple_resolution_map_->getMultipleResolutionMaps(i)->getOccupancyGridMap();//第0层是最高分辨率的
     }
     return multi_occupancy_grid_vec_;

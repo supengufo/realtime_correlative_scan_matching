@@ -14,6 +14,7 @@
 //Self
 #include "grid.h"
 #include "multi_solution_map.h"
+#include "single_layer.h"
 
 class Mapper {
 public:
@@ -24,12 +25,11 @@ public:
         int col;
     };
 
-
 public:
     typedef std::shared_ptr<Mapper> Ptr;
 //    typedef std::shared_ptr<Mapper> ConstPtr;
     explicit Mapper(const std::unordered_map<std::string, double> &map_params);
-
+    Mapper(const MapParams&map_params);
     std::vector<nav_msgs::OccupancyGrid> &getROSOccGridMapVector();
 
     void saveMap(const std::string &img_dir, const std::string &cfg_dir); //
@@ -51,7 +51,8 @@ public:
 
 private:
     MultipleResolutionMap::Ptr multiple_resolution_map_;
-    std::unordered_map<std::string, double> map_params_;
+//    std::unordered_map<std::string, double> map_params_;
+    MapParams map_params_;
     std::vector<nav_msgs::OccupancyGrid> multi_occupancy_grid_vec_;
 };
 

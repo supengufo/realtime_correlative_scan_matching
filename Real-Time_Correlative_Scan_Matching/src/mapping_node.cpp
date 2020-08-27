@@ -37,18 +37,16 @@ void pubTF(tf_TransformBroadcaster_Ptr &tf_pub, const Pose2d &robot_pose) {
     odom_trans.transform.rotation = odom_quat;
     tf_pub->sendTransform(odom_trans);
 }
+
 void pubOdom(const ros::Publisher &publisher, const Pose2d &robot_pose) {
     geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(robot_pose.getYaw());
-
     nav_msgs::Odometry odom;
     odom.header.stamp = ros::Time::now();
     odom.header.frame_id = "map";
     odom.child_frame_id = "laser";
-
     odom.pose.pose.position.x = robot_pose.getX();
     odom.pose.pose.position.y = robot_pose.getY();
     odom.pose.pose.orientation = odom_quat;
-
     publisher.publish(odom);
 }
 
@@ -72,6 +70,19 @@ void getMapParams(const ros::NodeHandle &ph, std::unordered_map<std::string, dou
     map_params["search_steps"] = 5;
     map_params["layers"] = 2;
     map_params["magnification"] = 2;
+}
+
+void getMapParams(const ros::NodeHandle &ph, MapParams &map_params) {
+    map_params.map_grid_sizes_x = 1000;
+    map_params.map_grid_sizes_y = 1000;
+    map_params.map_ori_x = 500;
+    map_params.map_ori_y = 500;
+    map_params.resolution = 0.05;
+    map_params.search_step_xy = 0.01;
+    map_params.search_step_rad = 0.005;
+    map_params.search_steps = 5;
+    map_params.layers = 2;
+    map_params.magnification = 2;
 }
 
 void pubGridMap(const Mapper::Ptr &mapper, ros::Publisher &map_pub) {
@@ -100,8 +111,8 @@ int main(int argc, char **argv) {
     ph.getParam("lidar_topic", lidar_topic);
     cout << "bag_file_path: " << bag_path << endl;
     cout << "lidar_topic: " << lidar_topic << endl;
-
-    std::unordered_map<std::string, double> map_params;
+//    std::unordered_map<std::string, double> map_params;
+    MapParams map_params;
     getMapParams(ph, map_params);
 
     rosbag::Bag bag;
@@ -118,13 +129,12 @@ int main(int argc, char **argv) {
     Mapper::Ptr mapper(new Mapper(map_params));
     bool init = false;
     Pose2d pose_estimate_cur, pose_estimate_pre;
-
-
 //    ProfilerStart("CPUProfile");
     while (ros::ok() && bag_it != bag_view.end()) {
         std::cout << "---------------------------------------" << std::endl;
-        clock_t time_start=clock();
+        clock_t time_start = clock();
         const auto scan = bag_it->instantiate<sensor_msgs::LaserScan>();
+        scan->header.stamp = ros::Time::now();
         scan_pub.publish(scan);
         Pose2d pose_estimate = Pose2d(0, 0, 0);
         if (!init) {
@@ -136,7 +146,7 @@ int main(int argc, char **argv) {
             mapper->updateMultiSolutionMap(pose_estimate, scan);
         }
 //        std::cout << "pose_estimate x y yaw : " << pose_estimate.getX() << " " << pose_estimate.getY() << " " << pose_estimate.getYaw() << std::endl;
-        clock_t time_end=clock();
+        clock_t time_end = clock();
 //        cout<<"time use:"<<1000*(time_end-time_start)/(double)CLOCKS_PER_SEC<<"ms"<<endl;
         pubOdom(odom_pub, pose_estimate);
         pubTF(odom_broadcaster, pose_estimate);
