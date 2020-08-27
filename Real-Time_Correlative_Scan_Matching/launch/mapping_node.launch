@@ -1,8 +1,8 @@
 <launch>
-    <node pkg="realtime_correlative_scan_matching" type="mapping_node" name="mapping_node" output="screen" clear_params="true">
+    <node pkg="realtime_correlative_scan_matching" type="mapping_node" name="mapping_node" output="screen">
         <param name="bag_file_path" value="/home/nrsl/dataset/ogm/laser1_2018-07-14-17-31-41.bag"/>
         <param name="lidar_topic" value="/scan"/>
-        <param name="map_grid_sizes_y" value="1000"/>
+        <param name="map_grid_sizes_x" value="1000"/>
         <param name="map_grid_sizes_y" value="1000"/>
         <param name="map_ori_x" value="500"/>
         <param name="map_ori_y" value="500"/>

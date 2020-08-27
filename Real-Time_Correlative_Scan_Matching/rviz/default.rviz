@@ -8,7 +8,6 @@ Panels:
         - /Status1
         - /Odometry1
         - /Odometry1/Shape1
-        - /LaserScan1/Status1
         - /Map_Axes1
       Splitter Ratio: 0.3888888955116272
     Tree Height: 807
@@ -115,7 +114,7 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 1063
+      Max Intensity: 1078
       Min Color: 0; 0; 0
       Min Intensity: 397
       Name: LaserScan
@@ -134,7 +133,7 @@ Visualization Manager:
       Enabled: true
       Length: 1.5
       Name: Map_Axes
-      Radius: 0.20000000298023224
+      Radius: 0.10000000149011612
       Reference Frame: map
       Value: true
     - Alpha: 0.699999988079071
@@ -175,25 +174,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 15.404377937316895
+      Distance: 14.123971939086914
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.2277415990829468
-        Y: -1.1046948432922363
+        X: 0.36568188667297363
+        Y: -0.10360860824584961
         Z: 2.86102294921875e-6
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.8647969365119934
+      Pitch: 1.4747967720031738
       Target Frame: <Fixed Frame>
       Value: XYOrbit (rviz)
-      Yaw: 4.765407562255859
+      Yaw: 4.920399188995361
     Saved: ~
 Window Geometry:
   Displays:

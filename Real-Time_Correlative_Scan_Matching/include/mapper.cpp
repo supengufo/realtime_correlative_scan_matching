@@ -11,8 +11,7 @@
 
 Mapper::Mapper(const MapParams &map_params): map_params_(map_params) {
     multiple_resolution_map_.reset(new MultipleResolutionMap(map_params_));
-    std::cout << "map_params_:" << map_params_.layers << std::endl;
-
+//    std::cout << "map_params_:" << map_params_.layers << std::endl;
     multi_occupancy_grid_vec_.resize(map_params_.layers);
 }
 
