@@ -12,7 +12,7 @@
 //self
 #include "mapper.h"
 #include "pose2d.h"
-
+//#include <gperftools/profiler.h>
 //STL
 #include <unordered_map>
 #include <iostream>
@@ -117,6 +117,9 @@ int main(int argc, char **argv) {
     Mapper::Ptr mapper(new Mapper(map_params));
     bool init = false;
     Pose2d pose_estimate_cur, pose_estimate_pre;
+
+
+//    ProfilerStart("CPUProfile");
     while (ros::ok() && bag_it != bag_view.end()) {
         std::cout << "---------------------------------------" << std::endl;
         clock_t time_start=clock();
@@ -131,10 +134,9 @@ int main(int argc, char **argv) {
             mapper->RealTimeCorrelativeScanMatch(pose_estimate_pre, scan, pose_estimate);
             mapper->updateMultiSolutionMap(pose_estimate, scan);
         }
-
-        std::cout << "pose_estimate x y yaw : " << pose_estimate.getX() << " " << pose_estimate.getY() << " " << pose_estimate.getYaw() << std::endl;
+//        std::cout << "pose_estimate x y yaw : " << pose_estimate.getX() << " " << pose_estimate.getY() << " " << pose_estimate.getYaw() << std::endl;
         clock_t time_end=clock();
-        cout<<"time use:"<<1000*(time_end-time_start)/(double)CLOCKS_PER_SEC<<"ms"<<endl;
+//        cout<<"time use:"<<1000*(time_end-time_start)/(double)CLOCKS_PER_SEC<<"ms"<<endl;
         pubOdom(odom_pub, pose_estimate);
         pubTF(odom_broadcaster, pose_estimate);
         pubGridMap(mapper, map_pub);
@@ -144,4 +146,5 @@ int main(int argc, char **argv) {
         ++bag_it;
         loop_rate.sleep();
     }
+//    ProfilerStop();
 }

@@ -31,6 +31,7 @@ std::vector<nav_msgs::OccupancyGrid> &Mapper::getROSOccGridMapVector() {
 void Mapper::updateMultiSolutionMap(const Eigen::Matrix3d &pose_estimate, const sensor_msgs::LaserScanPtr &point_cloud) {
     multiple_resolution_map_->updateMultiResolutionMap(pose_estimate, point_cloud);
 }
+
 void Mapper::updateMultiSolutionMap(const Pose2d &pose_estimate, const sensor_msgs::LaserScanPtr &point_cloud) {
     multiple_resolution_map_->updateMultiResolutionMap(pose_estimate, point_cloud);
 }

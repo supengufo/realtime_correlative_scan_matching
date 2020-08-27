@@ -103,5 +103,4 @@ private:
     cslibs_math_2d::algorithms::Bresenham::Ptr bresenham_algo_;
 };
 
-
 #endif //SRC_MULTI_SOLUTION_MAP_H
