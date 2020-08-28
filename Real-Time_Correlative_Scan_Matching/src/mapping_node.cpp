@@ -66,6 +66,16 @@ void getMapParams(const ros::NodeHandle &ph, std::unordered_map<std::string, dou
 }
 
 void getMapParams(const ros::NodeHandle &ph, MapParams &map_params) {
+//    ph.getParam("map_grid_sizes_x", map_params.map_grid_sizes_x);
+//    ph.getParam("map_grid_sizes_y", map_params.map_grid_sizes_y);
+//    ph.getParam("map_ori_x", map_params.map_ori_x);
+//    ph.getParam("map_ori_y", map_params.map_ori_y);
+//    ph.getParam("resolution", map_params.resolution);
+//    ph.getParam("search_step_xy", map_params.search_step_xy);
+//    ph.getParam("search_step_rad", map_params.search_step_rad);
+//    ph.getParam("layers", map_params.layers);
+//    ph.getParam("magnification", map_params.magnification);
+//    cout << "map_grid_sizes_x: " << map_grid_sizes_x << endl;
     map_params.map_grid_sizes_x = 1000;
     map_params.map_grid_sizes_y = 1000;
     map_params.map_ori_x = 500;
@@ -98,7 +108,7 @@ int main(int argc, char **argv) {
     ros::Publisher scan_pub = nh.advertise<sensor_msgs::LaserScan>("mapping/scan", 1);
     tf_TransformBroadcaster_Ptr odom_broadcaster(new tf::TransformBroadcaster());
 
-    std::string bag_path,lidar_topic;
+    std::string bag_path, lidar_topic;
     ph.getParam("bag_file_path", bag_path);
     ph.getParam("lidar_topic", lidar_topic);
     cout << "bag_file_path: " << bag_path << endl;
@@ -137,9 +147,10 @@ int main(int argc, char **argv) {
             mapper->RealTimeCorrelativeScanMatch(pose_estimate_pre, scan, pose_estimate);
             mapper->updateMultiSolutionMap(pose_estimate, scan);
         }
+
 //        std::cout << "pose_estimate x y yaw : " << pose_estimate.getX() << " " << pose_estimate.getY() << " " << pose_estimate.getYaw() << std::endl;
         clock_t time_end = clock();
-        cout<<"time use:"<<1000*(time_end-time_start)/(double)CLOCKS_PER_SEC<<"ms"<<endl;
+        cout << "time use:" << 1000*(time_end - time_start)/(double) CLOCKS_PER_SEC << "ms" << endl;
         pubOdom(odom_pub, pose_estimate);
         pubTF(odom_broadcaster, pose_estimate);
         pubGridMap(mapper, map_pub);
