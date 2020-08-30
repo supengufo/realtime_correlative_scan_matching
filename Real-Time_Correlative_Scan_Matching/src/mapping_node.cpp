@@ -13,7 +13,7 @@
 #include "mapper.h"
 #include "pose2d.h"
 #include "parameters.h"
-//#include <gperftools/profiler.h>
+#include <gperftools/profiler.h>
 //STL
 #include <unordered_map>
 #include <iostream>
@@ -99,6 +99,7 @@ void pubGridMapLowResolution(const Mapper::Ptr &mapper, ros::Publisher &map_pub)
 };
 
 int main(int argc, char **argv) {
+    ProfilerStart("/tmp/scan_matching_profile");
     ros::init(argc, argv, "mapping_node");
     ros::NodeHandle nh;
     ros::NodeHandle ph("~");
@@ -107,10 +108,14 @@ int main(int argc, char **argv) {
     ros::Publisher odom_pub = nh.advertise<nav_msgs::Odometry>("mapping/odometry", 10);
     ros::Publisher scan_pub = nh.advertise<sensor_msgs::LaserScan>("mapping/scan", 1);
     tf_TransformBroadcaster_Ptr odom_broadcaster(new tf::TransformBroadcaster());
+//    std::string bag_path, lidar_topic;
+    std::string bag_path("/home/nrsl/code/ogm_ws/src/data/2020-08-28-15-28-24.bag");
+//    std::string bag_path("../../../src/data/2020-08-28-15-28-24.bag");
+    std::string lidar_topic("/scan");
 
-    std::string bag_path, lidar_topic;
-    ph.getParam("bag_file_path", bag_path);
-    ph.getParam("lidar_topic", lidar_topic);
+//    ph.getParam("bag_file_path", bag_path);
+//    ph.getParam("lidar_topic", lidar_topic);
+
     cout << "bag_file_path: " << bag_path << endl;
     cout << "lidar_topic: " << lidar_topic << endl;
 
@@ -130,7 +135,8 @@ int main(int argc, char **argv) {
     Mapper::Ptr mapper(new Mapper(map_params));
     bool init = false;
     Pose2d pose_estimate_cur, pose_estimate_pre;
-//    ProfilerStart("CPUProfile");
+
+    int count = 0;
     while (ros::ok() && bag_it != bag_view.end()) {
         std::cout << "---------------------------------------" << std::endl;
         clock_t time_start = clock();
@@ -158,7 +164,11 @@ int main(int argc, char **argv) {
         pose_estimate_cur = pose_estimate;
         pose_estimate_pre = pose_estimate_cur;
         ++bag_it;
+        ++count;
+        if (count == 20) {
+            break;
+        }
         loop_rate.sleep();
     }
-//    ProfilerStop();
+    ProfilerStop();
 }

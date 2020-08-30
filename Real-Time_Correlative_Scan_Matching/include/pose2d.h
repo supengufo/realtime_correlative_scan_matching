@@ -14,29 +14,38 @@ public:
         y_ = 0.0;
         theta_ = 0.0;
     }
-    Pose2d(double x, double y, double theta) : x_(x), y_(y), theta_(theta) {}
+    Pose2d(double x, double y, double theta) : x_(x), y_(y), theta_(theta) {
+        double cos_value = cos(theta_);
+        double sin_value = sin(theta_);
+        R_ << cos_value, -sin_value,
+                sin_value, cos_value;
+    }
+    Pose2d(const Pose2d &p) : x_(p.x_), y_(p.y_), theta_(p.theta_), R_(p.R_) {
+
+    }
 
     const Pose2d operator*(const Pose2d &p2) {
-        Pose2d p;
-        Eigen::Matrix2d R;
-        R << cos(theta_), -sin(theta_),
-                sin(theta_), cos(theta_);
+//        Pose2d p;
+//        Eigen::Matrix2d R;
+//        R << cos(theta_), -sin(theta_),
+//                sin(theta_), cos(theta_);
         Eigen::Vector2d pt2(p2.x_, p2.y_);
-        Eigen::Vector2d pt = R*pt2 + Eigen::Vector2d(x_, y_);
-
-        p.x_ = pt(0);
-        p.y_ = pt(1);
-        p.theta_ = theta_ + p2.theta_;
-        NormAngle(p.theta_);
-        return p;
+        Eigen::Vector2d pt = R_*pt2 + Eigen::Vector2d(x_, y_);
+        double theta;
+//        theta =
+//        p.x_ = pt(0);
+//        p.y_ = pt(1);
+        theta = theta_ + p2.theta_;
+        NormAngle(theta);
+        return Pose2d(pt(0), pt(1), theta);
     }
 
     Eigen::Vector2d operator*(const Eigen::Vector2d &p) const {
-        Eigen::Matrix2d R;
-        R << cos(theta_), -sin(theta_),
-                sin(theta_), cos(theta_);
+//        Eigen::Matrix2d R;
+//        R << cos(theta_), -sin(theta_),
+//                sin(theta_), cos(theta_);
         Eigen::Vector2d t(x_, y_);
-        return R*p + t;
+        return R_*p + t;
     }
 
 
@@ -70,6 +79,8 @@ public:
     }
 private:
     double x_, y_, theta_;
+    Eigen::Matrix2d R_;
+
 }; //class Pose2d
 
 
