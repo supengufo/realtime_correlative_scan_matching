@@ -82,7 +82,8 @@ void getMapParams(const ros::NodeHandle &ph, MapParams &map_params) {
     map_params.map_ori_y = 500;
     map_params.resolution = 0.05;
     map_params.search_step_xy = 0.01;
-    map_params.search_step_rad = 0.005;
+//    map_params.search_step_rad = 0.005;
+    map_params.search_step_rad = M_PI*1./180;
     map_params.search_steps = 5;
     map_params.layers = 2;
     map_params.magnification = 2;
@@ -98,6 +99,14 @@ void pubGridMapLowResolution(const Mapper::Ptr &mapper, ros::Publisher &map_pub)
     map_pub.publish(grid_map_msg);
 };
 
+//void Pose2d::GenerateSinCosMap() {
+//    for (double i = -3.141; i <=3.141 ;) {
+//        sin_map_[int(i*1000)] = sin(i);
+//        cos_map_[int(i*1000)] = cos(i);
+//        i+=0.001;
+//    }
+//}
+
 int main(int argc, char **argv) {
     ProfilerStart("/tmp/scan_matching_profile");
     ros::init(argc, argv, "mapping_node");
@@ -109,10 +118,10 @@ int main(int argc, char **argv) {
     ros::Publisher scan_pub = nh.advertise<sensor_msgs::LaserScan>("mapping/scan", 1);
     tf_TransformBroadcaster_Ptr odom_broadcaster(new tf::TransformBroadcaster());
 //    std::string bag_path, lidar_topic;
-    std::string bag_path("/home/nrsl/code/ogm_ws/src/data/2020-08-28-15-28-24.bag");
+//    std::string bag_path("/home/nrsl/code/ogm_ws/src/data/2020-08-28-15-28-24.bag");
+    std::string bag_path("/home/nrsl/dataset/ogm/laser2_2018-07-14-18-41-42.bag");
 //    std::string bag_path("../../../src/data/2020-08-28-15-28-24.bag");
     std::string lidar_topic("/scan");
-
 //    ph.getParam("bag_file_path", bag_path);
 //    ph.getParam("lidar_topic", lidar_topic);
 
@@ -137,6 +146,7 @@ int main(int argc, char **argv) {
     Pose2d pose_estimate_cur, pose_estimate_pre;
 
     int count = 0;
+    double total_time = 0;
     while (ros::ok() && bag_it != bag_view.end()) {
         std::cout << "---------------------------------------" << std::endl;
         clock_t time_start = clock();
@@ -146,16 +156,16 @@ int main(int argc, char **argv) {
 
         Pose2d pose_estimate = Pose2d(0, 0, 0);
         if (!init) {
-            mapper->updateMultiSolutionMap(pose_estimate, scan);
+            mapper->UpdateMultiSolutionMap(pose_estimate, scan);
             init = true;
         }
         else {
             mapper->RealTimeCorrelativeScanMatch(pose_estimate_pre, scan, pose_estimate);
-            mapper->updateMultiSolutionMap(pose_estimate, scan);
+            mapper->UpdateMultiSolutionMap(pose_estimate, scan);
         }
-
 //        std::cout << "pose_estimate x y yaw : " << pose_estimate.getX() << " " << pose_estimate.getY() << " " << pose_estimate.getYaw() << std::endl;
         clock_t time_end = clock();
+        total_time += time_end;
         cout << "time use:" << 1000*(time_end - time_start)/(double) CLOCKS_PER_SEC << "ms" << endl;
         pubOdom(odom_pub, pose_estimate);
         pubTF(odom_broadcaster, pose_estimate);
@@ -165,10 +175,11 @@ int main(int argc, char **argv) {
         pose_estimate_pre = pose_estimate_cur;
         ++bag_it;
         ++count;
-        if (count == 20) {
-            break;
-        }
+//        if (count == 500) {
+//            break;
+//        }
         loop_rate.sleep();
     }
+    cout << "===> avrerage use time: " << total_time/double(count) << std::endl;
     ProfilerStop();
 }

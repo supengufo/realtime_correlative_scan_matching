@@ -7,7 +7,7 @@
 #include <vector>
 #include <unordered_map>
 
-struct MapParams{
+struct MapParams {
     int map_grid_sizes_x;
     int map_grid_sizes_y;
     int map_ori_x;
@@ -18,7 +18,7 @@ struct MapParams{
     int search_steps;
     int layers;
     int magnification;
-    MapParams(){
+    MapParams() {
     }
 };
 
@@ -26,7 +26,7 @@ struct SearchParameters {
     int min_x, min_y, max_x, max_y;
     double min_rad, max_rad;
     std::vector<Pose2d> candidates;
-    void generateSearchParameters(const Pose2d &pose, double xy_step_length, double angle_step_length, int search_steps) {
+    void GenerateSearchParameters(const Pose2d &pose, double xy_step_length, double angle_step_length, int search_steps) {
         for (int angle = -search_steps; angle <= search_steps; ++angle) {
             for (int x = -search_steps; x <= search_steps; ++x) {
                 for (int y = -search_steps; y < search_steps; ++y) {
@@ -39,10 +39,11 @@ struct SearchParameters {
             }
         }
     }
-    SearchParameters() {};
+    SearchParameters() = default;
     SearchParameters(const Pose2d &pose, double xy_step_length, double angle_step_length, int search_steps) {
-        generateSearchParameters(pose, xy_step_length, angle_step_length, search_steps);
+        GenerateSearchParameters(pose, xy_step_length, angle_step_length, search_steps);
     }
 
 };
+
 #endif //SRC_PARAMETERS_H

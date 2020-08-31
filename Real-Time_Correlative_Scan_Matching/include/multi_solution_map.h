@@ -23,30 +23,22 @@
 class MultipleResolutionMap {
 public:
     typedef std::shared_ptr<MultipleResolutionMap> Ptr;
-    MultipleResolutionMap(std::unordered_map<std::string, double> &map_params);
-    MultipleResolutionMap(MapParams &map_params);
-    void setupMultiResolutionMapParams();
-    void updateMultiResolutionMap(const Pose2d &pose, const sensor_msgs::LaserScanPtr &point_cloud);
-    void updateMultiResolutionMap(const Eigen::Matrix3d &pose, const sensor_msgs::LaserScanPtr &point_cloud);;
-    inline int getMapLayers() {
+    explicit MultipleResolutionMap(MapParams &map_params);
+    void SetupMultiResolutionMapParams();
+    void UpdateMultiResolutionMap(const Pose2d &pose, const sensor_msgs::LaserScanPtr &point_cloud);
+    inline int get_map_layers()const {
         return int(base_map_params_.layers);
     }
-    inline int getMapMagnification() {
+    inline int get_magnification()const {
         return int(base_map_params_.magnification);
     }
-    inline float getSearchStepXY() {
+    inline double get_search_step_xy()const {
         return base_map_params_.search_step_xy;
     }
-    inline const SingleLayer::Ptr &getMultipleResolutionMaps(int idx) {
-        return multi_resolution_map_[std::to_string(idx)];
-    }
-    const SingleLayer::Ptr getTargetLayerPtr(int idx);
+    SingleLayer::Ptr get_idx_multi_resolution_map(int idx);
 private:
-    void updateBaseLayer(const Eigen::Matrix3d &pose, const sensor_msgs::LaserScanPtr &point_cloud) {
-    }
-//    std::unordered_map<std::string, double> base_map_params_;
     MapParams base_map_params_;
-    std::unordered_map<std::string, SingleLayer::Ptr> multi_resolution_map_;
+    std::unordered_map<int, SingleLayer::Ptr> multi_resolution_map_;
     cslibs_math_2d::algorithms::Bresenham::Ptr bresenham_algo_;
 };
 

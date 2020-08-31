@@ -6,6 +6,8 @@
 #include <memory>
 #include <cmath>
 
+
+
 template<typename T>
 struct LogOdds {
     inline static T to(const T p) {
@@ -20,8 +22,8 @@ class Grid {
 public:
     typedef std::shared_ptr<Grid> Ptr;
     Grid(float pro_free, float pro_occ);
-    void updateFree();
-    void updateOcc();
+    void UpdateFree();
+    void UpdateOcc();
     void setGridLog(const float &value){
         log_prior_ = value;
     };

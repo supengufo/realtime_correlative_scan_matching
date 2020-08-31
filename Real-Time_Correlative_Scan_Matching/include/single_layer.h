@@ -21,34 +21,29 @@
 class SingleLayer {
 public:
     typedef std::shared_ptr<SingleLayer> Ptr;
-    explicit SingleLayer(std::unordered_map<std::string, double> &base_map_params);
     SingleLayer(MapParams &base_map_params);
-    void initOccupancyGridMsg();
-    void updateMap(const Eigen::Matrix3d &pose, const sensor_msgs::LaserScanConstPtr &scan);
-    void updateMap(const Pose2d &pose, const sensor_msgs::LaserScanConstPtr &scan);
-    void updateMap(const SingleLayer::Ptr &base_layer);
-    void updateFreeGrids(std::vector<Eigen::Vector2d> &free_grids_coor);
-    void updateOccGrids(Eigen::Vector2d &occ_grids_coor);
-    void setGridLogValue(Eigen::Vector2d &coordinate, const float &log_value);
-    float getGridLogValue(Eigen::Vector2d &coordinate);
-    float getGridLogValue(Eigen::Vector2d &coordinate, float &unknown);
-    float getGridProbValue(Eigen::Vector2d &coordinate);
-    void updateMapFromBaseMap(const SingleLayer::Ptr &base_map, const Eigen::Matrix3d &pose, const sensor_msgs::LaserScanConstPtr &scan);
-    bool checkCoordinateValid(Eigen::Vector2d &coordinate);
-
+    void InitOccupancyGridMsg();
+//    void updateMap(const Eigen::Matrix3d &pose, const sensor_msgs::LaserScanConstPtr &scan);
+    void UpdateMap(const Pose2d &pose, const sensor_msgs::LaserScanConstPtr &scan);
+    void UpdateMap(const SingleLayer::Ptr &base_layer);
+    void UpdateFreeGrids(std::vector<Eigen::Vector2d> &free_grids_coor);
+    void UpdateOccGrids(Eigen::Vector2d &occ_grids_coor);
+//    float getGridLogValue(Eigen::Vector2d &coordinate, float &unknown);
+//    float getGridProbValue(Eigen::Vector2d &coordinate);
+//    void updateMapFromBaseMap(const SingleLayer::Ptr &base_map, const Eigen::Matrix3d &pose, const sensor_msgs::LaserScanConstPtr &scan);
+    bool CheckCoordinateValid(Eigen::Vector2d &coordinate) const;
     double RealTimeCorrelativeScanMatch(const sensor_msgs::LaserScanPtr &point_cloud, Pose2d &pose_estimate);
-
     double RealTimeCorrelativeScanMatchCore(const sensor_msgs::LaserScanPtr &scan, const Pose2d &pose_estimate);
-    nav_msgs::OccupancyGrid &getOccupancyGridMap();
-    void getSearchParameters(const Pose2d &pose, SearchParameters &search_parameters);
-
+    nav_msgs::OccupancyGrid &GetOccupancyGridMap();
+    void GetSearchParameters(const Pose2d &pose, SearchParameters &search_parameters);
+    float GetGridLogValue(Eigen::Vector2d &coordinate);
+    void SetGridLogValue(Eigen::Vector2d &coordinate, const float &log_value);
 private:
     nav_msgs::OccupancyGrid ros_grid_map_;
     std::vector<std::vector<Grid::Ptr>> grid_map_;
-    int max_x_, max_y_;
-    int min_x_, min_y_;
-    int ori_x_, ori_y_;
-//    std::unordered_map<std::string, double> this_map_params_;
+    int max_x_{}, max_y_{};
+    int min_x_{}, min_y_{};
+    int ori_x_{}, ori_y_{};
     MapParams this_map_params_;
 };
 

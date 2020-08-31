@@ -11,13 +11,15 @@ Grid::Grid(float pro_free, float pro_occ) : log_free_(LogOdds<float>::to(pro_fre
     log_occ_threshold_ = LogOdds<float>::to(pro_occ_threshold_);
     log_free_threshold_ = LogOdds<float>::to(pro_free_threshold_);
 }
-void Grid::updateFree() {
+
+void Grid::UpdateFree() {
     if(log_prior_<log_free_threshold_){
         return;
     }
     log_prior_ += log_free_;
 }
-void Grid::updateOcc() {
+
+void Grid::UpdateOcc() {
     if(log_prior_>log_occ_threshold_){
         return;
     }

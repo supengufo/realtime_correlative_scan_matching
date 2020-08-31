@@ -1,7 +1,6 @@
 //
 // Created by nrsl on 2020/8/27.
 //
-
 #include "single_layer.h"
 /**
  *      Single layer
@@ -10,9 +9,10 @@ SingleLayer::SingleLayer(MapParams &base_map_params)
         : this_map_params_(base_map_params) {
     std::vector<std::vector<Grid::Ptr>> tmp_map1(this_map_params_.map_grid_sizes_x, std::vector<Grid::Ptr>(this_map_params_.map_grid_sizes_y, nullptr));
     grid_map_.swap(tmp_map1);
-    initOccupancyGridMsg();
+    InitOccupancyGridMsg();
 }
-void SingleLayer::initOccupancyGridMsg() {
+
+void SingleLayer::InitOccupancyGridMsg() {
     ros_grid_map_.header.frame_id = "map";
     ros_grid_map_.header.stamp = ros::Time::now();
     ros_grid_map_.info.width = this_map_params_.map_grid_sizes_x;
@@ -27,7 +27,8 @@ void SingleLayer::initOccupancyGridMsg() {
     min_x_ = -max_x_;
     min_y_ = -max_y_;
 }
-void SingleLayer::updateMap(const Pose2d &pose, const sensor_msgs::LaserScanConstPtr &scan) {
+
+void SingleLayer::UpdateMap(const Pose2d &pose, const sensor_msgs::LaserScanConstPtr &scan) {
     const double &ang_min = scan->angle_min;
     const double &ang_inc = scan->angle_increment;
     const double &range_max = scan->range_max;
@@ -53,30 +54,25 @@ void SingleLayer::updateMap(const Pose2d &pose, const sensor_msgs::LaserScanCons
         int y_id_occ = p_odom.y() > 0 ? floor(p_odom.y()/cell_size) : ceil(p_odom.y()/cell_size);
         ++occ_count;
         Eigen::Vector2d occ_point_coordinate = {x_id_occ, y_id_occ};
-        updateOccGrids(occ_point_coordinate);
+        UpdateOccGrids(occ_point_coordinate);
         std::vector<Eigen::Vector2d> free_point_coordinate;
         cslibs_math_2d::algorithms::Bresenham a0(cslibs_math_2d::Point2d(pose.getX(), pose.getY()), cslibs_math_2d::Point2d(p_odom.x(), p_odom.y()), cell_size);//TODO:直接使用cell_size_就不编译出错
         while (!a0.done()) {
             ++free_count;
             if (x_id_occ == a0.x() && y_id_occ == a0.y()) {
                 ++multi_counts;
-                updateOccGrids(occ_point_coordinate);
+                UpdateOccGrids(occ_point_coordinate);
             }
             else {
                 free_point_coordinate.emplace_back(a0.x(), a0.y());
             }
             ++a0;
         }
-        updateFreeGrids(free_point_coordinate);
+        UpdateFreeGrids(free_point_coordinate);
     }
 }
-void SingleLayer::updateMap(const Eigen::Matrix3d &pose, const sensor_msgs::LaserScanConstPtr &scan) {
 
-}
-void SingleLayer::updateMapFromBaseMap(const SingleLayer::Ptr &base_map, const Eigen::Matrix3d &pose, const sensor_msgs::LaserScanConstPtr &scan) {
-
-}
-void SingleLayer::updateMap(const SingleLayer::Ptr &base_layer) {
+void SingleLayer::UpdateMap(const SingleLayer::Ptr &base_layer) {
     int map_length_x = this_map_params_.map_grid_sizes_x;
     int map_length_y = this_map_params_.map_grid_sizes_y;
     int magnification = this_map_params_.magnification;
@@ -89,15 +85,15 @@ void SingleLayer::updateMap(const SingleLayer::Ptr &base_layer) {
             for (int k = 0; k < magnification; ++k) {
                 for (int l = 0; l < magnification; ++l) {
                     Eigen::Vector2d tmp_coor(target_coor.x() + k, target_coor.y() + l);
-                    log_max = std::max(log_max, base_layer->getGridLogValue(tmp_coor));
+                    log_max = std::max(log_max, base_layer->GetGridLogValue(tmp_coor));
                 }
             }
             Eigen::Vector2d update_coor(i, j);
-            setGridLogValue(update_coor, log_max);
+            SetGridLogValue(update_coor, log_max);
         }
     }
 }
-void SingleLayer::updateFreeGrids(std::vector<Eigen::Vector2d> &free_grids_coor) {
+void SingleLayer::UpdateFreeGrids(std::vector<Eigen::Vector2d> &free_grids_coor) {
     for (auto &coor:free_grids_coor) {
         if (coor.x() > max_x_) {
             coor.x() = max_x_;
@@ -117,14 +113,13 @@ void SingleLayer::updateFreeGrids(std::vector<Eigen::Vector2d> &free_grids_coor)
             Grid::Ptr grid;
             grid.reset(new Grid(0.4, 0.6));
             grid_map_[update_x][update_y] = grid;
-            grid_map_[update_x][update_y]->updateFree();
+            grid_map_[update_x][update_y]->UpdateFree();
             return;
         }
-        grid_map_[coor.x() + ori_x_][coor.y() + ori_y_]->updateFree();
+        grid_map_[coor.x() + ori_x_][coor.y() + ori_y_]->UpdateFree();
     }
 }
-void SingleLayer::updateOccGrids(Eigen::Vector2d &occ_grids_coor) {
-    //避免越界
+void SingleLayer::UpdateOccGrids(Eigen::Vector2d &occ_grids_coor) {
     if (occ_grids_coor.x() > max_x_) {
         occ_grids_coor.x() = max_x_;
     }
@@ -137,19 +132,20 @@ void SingleLayer::updateOccGrids(Eigen::Vector2d &occ_grids_coor) {
     else if (occ_grids_coor.y() < min_y_) {
         occ_grids_coor.y() = min_y_;
     }
-    int update_x = occ_grids_coor.x() + ori_x_;
-    int update_y = occ_grids_coor.y() + ori_y_;
+    int update_x,update_y;
+    update_x = occ_grids_coor.x() + ori_x_;
+    update_y = occ_grids_coor.y() + ori_y_;
 
     if (grid_map_[update_x][update_y] == nullptr) {
         Grid::Ptr grid;
         grid.reset(new Grid(0.4, 0.6));
         grid_map_[update_x][update_y] = grid;
-        grid_map_[update_x][update_y]->updateOcc();
+        grid_map_[update_x][update_y]->UpdateOcc();
         return;
     }
-    grid_map_[update_x][update_y]->updateOcc();
+    grid_map_[update_x][update_y]->UpdateOcc();
 }
-nav_msgs::OccupancyGrid &SingleLayer::getOccupancyGridMap() {
+nav_msgs::OccupancyGrid &SingleLayer::GetOccupancyGridMap() {
     int size_x = this_map_params_.map_grid_sizes_x;
     int size_y = this_map_params_.map_grid_sizes_y;
     ros_grid_map_.header.stamp = ros::Time::now();
@@ -176,8 +172,8 @@ nav_msgs::OccupancyGrid &SingleLayer::getOccupancyGridMap() {
     return ros_grid_map_;
 }
 
-void SingleLayer::setGridLogValue(Eigen::Vector2d &coordinate, const float &log_value) {
-    if (!checkCoordinateValid(coordinate)) {
+void SingleLayer::SetGridLogValue(Eigen::Vector2d &coordinate, const float &log_value) {
+    if (!CheckCoordinateValid(coordinate)) {
         return;
     }
     if (grid_map_[coordinate.x()][coordinate.y()] == nullptr) {
@@ -191,29 +187,14 @@ void SingleLayer::setGridLogValue(Eigen::Vector2d &coordinate, const float &log_
     grid_map_[coordinate.x()][coordinate.y()]->setGridLog(log_value);
 }
 
-float SingleLayer::getGridLogValue(Eigen::Vector2d &coordinate) {
-    if (!checkCoordinateValid(coordinate) || grid_map_[coordinate.x()][coordinate.y()] == nullptr) {
+float SingleLayer::GetGridLogValue(Eigen::Vector2d &coordinate) {
+    if (!CheckCoordinateValid(coordinate) || grid_map_[coordinate.x()][coordinate.y()] == nullptr) {
         return 0; //未知区域
     }
     return grid_map_[coordinate.x()][coordinate.y()]->getGridLog();
 }
 
-float SingleLayer::getGridLogValue(Eigen::Vector2d &coordinate, float &unknown) {
-    if (!checkCoordinateValid(coordinate) || grid_map_[coordinate.x()][coordinate.y()] == nullptr) {
-        unknown = true;
-        return 0;
-    }
-    return grid_map_[coordinate.x()][coordinate.y()]->getGridLog();
-}
-
-float SingleLayer::getGridProbValue(Eigen::Vector2d &coordinate) {
-    if (!checkCoordinateValid(coordinate) || grid_map_[coordinate.x()][coordinate.y()] == nullptr) {
-        return 0.5;
-    }
-    return grid_map_[coordinate.x()][coordinate.y()]->getGridPro();
-}
-
-bool SingleLayer::checkCoordinateValid(Eigen::Vector2d &coordinate) {
+bool SingleLayer::CheckCoordinateValid(Eigen::Vector2d &coordinate) const {
     if (coordinate.x() >= 0 || coordinate.x() < this_map_params_.map_grid_sizes_x || coordinate.y() >= 0 || coordinate.y() < this_map_params_.map_grid_sizes_y) {
         return true;
     }
@@ -222,16 +203,16 @@ bool SingleLayer::checkCoordinateValid(Eigen::Vector2d &coordinate) {
     }
 }
 
-void SingleLayer::getSearchParameters(const Pose2d &pose, SearchParameters &search_parameters) {
+void SingleLayer::GetSearchParameters(const Pose2d &pose, SearchParameters &search_parameters) {
     double xy_step_length = this_map_params_.search_step_xy;
     double angle_step_length = this_map_params_.search_step_rad;
     int search_steps = this_map_params_.search_steps;
-    search_parameters.generateSearchParameters(pose, xy_step_length, angle_step_length, search_steps);
+    search_parameters.GenerateSearchParameters(pose, xy_step_length, angle_step_length, search_steps);
 }
 
 double SingleLayer::RealTimeCorrelativeScanMatch(const sensor_msgs::LaserScanPtr &point_cloud, Pose2d &pose_estimate) {
     SearchParameters searchParameters;
-    getSearchParameters(pose_estimate, searchParameters);
+    GetSearchParameters(pose_estimate, searchParameters);
     auto candidates = searchParameters.candidates;
 
     Pose2d best_candidate;
@@ -281,4 +262,3 @@ double SingleLayer::RealTimeCorrelativeScanMatchCore(const sensor_msgs::LaserSca
     }
     return score;
 }
-
