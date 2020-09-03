@@ -1,7 +1,7 @@
 //
 // Created by nrsl on 2020/8/19.
 //
-#include "multi_solution_map.h"
+#include "multi_resolution_map.h"
 MultipleResolutionMap::MultipleResolutionMap(MapParams &map_params) : base_map_params_(map_params) {
     SetupMultiResolutionMapParams();
 }

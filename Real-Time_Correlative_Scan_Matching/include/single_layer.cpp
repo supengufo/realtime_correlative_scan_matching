@@ -215,18 +215,15 @@ void SingleLayer::GetSearchParameters(const Pose2d &pose, vector<SearchParameter
         candidates.push_back(searchParameters);
     }
 }
-
-double SingleLayer::RealTimeCorrelativeScanMatch(const sensor_msgs::LaserScanPtr &scan, Pose2d &pose_estimate) {
-    cout << "map params:" << this_map_params_.resolution << endl;
-    cout << "Input pose: " << pose_estimate.getX() << " " << pose_estimate.getY() << " " << pose_estimate.getYaw() << endl;
+double SingleLayer::RealTimeCorrelativeScanMatch(const sensor_msgs::LaserScanPtr &scan, Pose2d &pose_estimate, map<double, Pose2d> &multi_candidates) {
+    multi_candidates.clear();
     vector<SearchParameters> search_parameters;
     GetSearchParameters(pose_estimate, search_parameters);
     Pose2d best_candidate;
     PointCloud point_cloud;
     GeneratePointCloud(scan, point_cloud);
-    //TODO：这里需要先使用 pose_estimate 变换一下，这个基础上再加上一些扰动。
     point_cloud = pose_estimate*point_cloud;
-    double max_score = 0;
+//    double max_score = 0;
     for (const auto &search_parameter:search_parameters) {
         Pose2d pose(search_parameter.get_angle(), 0, 0);
         auto point_cloud_tmp = pose*point_cloud;
@@ -235,18 +232,48 @@ double SingleLayer::RealTimeCorrelativeScanMatch(const sensor_msgs::LaserScanPtr
                 p += delta_xy;
             }
             double tmp_score = RealTimeCorrelativeScanMatchCore(point_cloud_tmp);
-            if (tmp_score > max_score) {
-                max_score = tmp_score;
-                double yaw = pose_estimate.getYaw() + search_parameter.get_angle();
-                double x = pose_estimate.getX() + delta_xy.x();
-                double y = pose_estimate.getY() + delta_xy.y();
-                best_candidate = Pose2d(yaw, x, y);
+            double yaw = pose_estimate.getYaw() + search_parameter.get_angle();
+            double x = pose_estimate.getX() + delta_xy.x();
+            double y = pose_estimate.getY() + delta_xy.y();
+            best_candidate = Pose2d(yaw, x, y);
+            multi_candidates.insert({tmp_score, best_candidate});
+            if (multi_candidates.size() > 5) {
+                multi_candidates.erase(multi_candidates.begin());
             }
         }
     }
     pose_estimate = best_candidate;
-    cout << "Output pose: " << pose_estimate.getX() << " " << pose_estimate.getY() << " " << pose_estimate.getYaw() << endl;
-    return max_score;
+    return (--multi_candidates.begin())->first;
+}
+Pose2d SingleLayer::RealTimeCorrelativeScanMatch(const sensor_msgs::LaserScanPtr &scan, map<double, Pose2d> &multi_candidates) {
+    Pose2d return_pose;
+    double max_score = 0;
+    for (auto &pose_estimates:multi_candidates) {
+        auto pose_estimate = pose_estimates.second;
+        vector<SearchParameters> search_parameters;
+        GetSearchParameters(pose_estimate, search_parameters);
+        PointCloud point_cloud;
+        GeneratePointCloud(scan, point_cloud);
+        point_cloud = pose_estimate*point_cloud;
+        for (const auto &search_parameter:search_parameters) {
+            Pose2d pose(search_parameter.get_angle(), 0, 0);
+            auto point_cloud_tmp = pose*point_cloud;
+            for (const auto &delta_xy:search_parameter.get_delta_xy()) {
+                for (auto &p:point_cloud_tmp) {
+                    p += delta_xy;
+                }
+                double tmp_score = RealTimeCorrelativeScanMatchCore(point_cloud_tmp);
+                if (tmp_score > max_score) {
+                    max_score = tmp_score;
+                    double yaw = pose_estimate.getYaw() + search_parameter.get_angle();
+                    double x = pose_estimate.getX() + delta_xy.x();
+                    double y = pose_estimate.getY() + delta_xy.y();
+                    return_pose = Pose2d(yaw, x, y);
+                }
+            }
+        }
+    }
+    return return_pose;
 }
 
 double SingleLayer::RealTimeCorrelativeScanMatchCore(const PointCloud &point_cloud) {
@@ -310,3 +337,4 @@ void SingleLayer::GeneratePointCloud(const sensor_msgs::LaserScanPtr &scan, Poin
         point_cloud.push_back(p_lidar);
     }
 }
+

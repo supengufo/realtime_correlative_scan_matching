@@ -1,8 +1,8 @@
 //
 // Created by nrsl on 2020/8/19.
 //
-#ifndef SRC_MULTI_SOLUTION_MAP_H
-#define SRC_MULTI_SOLUTION_MAP_H
+#ifndef SRC_MULTI_RESOLUTION_MAP_H
+#define SRC_MULTI_RESOLUTION_MAP_H
 #include "vector"
 #include "grid.h"
 #include <eigen3/Eigen/Core>
@@ -42,4 +42,4 @@ private:
     cslibs_math_2d::algorithms::Bresenham::Ptr bresenham_algo_;
 };
 
-#endif //SRC_MULTI_SOLUTION_MAP_H
+#endif //SRC_MULTI_RESOLUTION_MAP_H

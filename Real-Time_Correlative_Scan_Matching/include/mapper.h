@@ -11,7 +11,7 @@
 #include "pose2d.h"
 //Self
 #include "grid.h"
-#include "multi_solution_map.h"
+#include "multi_resolution_map.h"
 #include "single_layer.h"
 
 class Mapper {

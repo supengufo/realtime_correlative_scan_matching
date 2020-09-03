@@ -4,7 +4,7 @@
 #include "mapper.h"
 #include "grid.h"
 
-Mapper::Mapper(const MapParams &map_params): map_params_(map_params) {
+Mapper::Mapper(const MapParams &map_params) : map_params_(map_params) {
     multiple_resolution_map_.reset(new MultipleResolutionMap(map_params_));
     multi_occupancy_grid_vec_.resize(map_params_.layers);
 }
@@ -32,9 +32,15 @@ double Mapper::RealTimeCorrelativeScanMatch(const Pose2d &initial_pose_estimate,
     int layers = get_layers_count();
     pose_estimate = initial_pose_estimate;
     double score = 0;
-    for (int i = layers - 1; i >= 0; --i) {
-        auto map_layer = multiple_resolution_map_->get_idx_multi_resolution_map(i);
-        score = map_layer->RealTimeCorrelativeScanMatch(point_cloud, pose_estimate);
+    auto low_resolution_map_layer = multiple_resolution_map_->get_idx_multi_resolution_map(1);
+    map<double, Pose2d> multi_candidates;
+    score = low_resolution_map_layer->RealTimeCorrelativeScanMatch(point_cloud, pose_estimate, multi_candidates);
+    for (const auto &i:multi_candidates) {
+        cout << i.first << " " << i.second.getX() << " " << i.second.getY() << " " << i.second.getYaw() << endl;
     }
+    auto high_resolution_map_layer = multiple_resolution_map_->get_idx_multi_resolution_map(0);
+
+    Pose2d final_pose = high_resolution_map_layer->RealTimeCorrelativeScanMatch(point_cloud, multi_candidates);
+    pose_estimate = final_pose;
     return score;
 }

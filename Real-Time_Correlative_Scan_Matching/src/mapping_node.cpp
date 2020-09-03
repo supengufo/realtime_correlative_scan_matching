@@ -81,10 +81,10 @@ void getMapParams(const ros::NodeHandle &ph, MapParams &map_params) {
     map_params.map_ori_x = 500;
     map_params.map_ori_y = 500;
     map_params.resolution = 0.05;
-    map_params.search_step_xy = 0.01;
+    map_params.search_step_xy = 0.02;
     map_params.search_step_rad = 0.005;
 //    map_params.search_step_rad = M_PI*1./180;
-    map_params.search_steps = 5;
+    map_params.search_steps = 10;
     map_params.layers = 2;
     map_params.magnification = 2;
 }
@@ -140,7 +140,7 @@ int main(int argc, char **argv) {
         ++bag_it;
     }
 
-    ros::Rate loop_rate(10);
+    ros::Rate loop_rate(1);
     Mapper::Ptr mapper(new Mapper(map_params));
     bool init = false;
     Pose2d pose_estimate_cur, pose_estimate_pre;
@@ -163,10 +163,10 @@ int main(int argc, char **argv) {
             mapper->RealTimeCorrelativeScanMatch(pose_estimate_pre, scan, pose_estimate);
             mapper->UpdateMultiSolutionMap(pose_estimate, scan);
         }
-//        std::cout << "pose_estimate x y yaw : " << pose_estimate.getX() << " " << pose_estimate.getY() << " " << pose_estimate.getYaw() << std::endl;
         clock_t time_end = clock();
-        total_time += time_end;
-        cout << "time use:" << 1000*(time_end - time_start)/(double) CLOCKS_PER_SEC << "ms" << endl;
+        auto uesd_time = 1000*(time_end - time_start)/(double) CLOCKS_PER_SEC;
+        total_time += uesd_time;
+        cout << "time use:" << uesd_time << "ms" << endl;
         pubOdom(odom_pub, pose_estimate);
         pubTF(odom_broadcaster, pose_estimate);
         pubGridMap(mapper, map_pub);

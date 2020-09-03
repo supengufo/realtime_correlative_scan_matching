@@ -35,7 +35,8 @@ public:
 //    void updateMapFromBaseMap(const SingleLayer::Ptr &base_map, const Eigen::Matrix3d &pose, const sensor_msgs::LaserScanConstPtr &scan);
     bool CheckCoordinateValid(Eigen::Vector2d &coordinate) const;
     static void GeneratePointCloud(const sensor_msgs::LaserScanPtr &scan, PointCloud &point_cloud);
-    double RealTimeCorrelativeScanMatch(const sensor_msgs::LaserScanPtr &scan, Pose2d &pose_estimate);
+    Pose2d RealTimeCorrelativeScanMatch(const sensor_msgs::LaserScanPtr &scan, map<double, Pose2d> &multi_candidates);
+    double RealTimeCorrelativeScanMatch(const sensor_msgs::LaserScanPtr &scan, Pose2d &pose_estimate,map<double, Pose2d> &multi_candidates);;
     nav_msgs::OccupancyGrid &GetOccupancyGridMap();
     void GetSearchParameters(const Pose2d &pose, vector<SearchParameters> &candidates);
     float GetGridLogValue(Eigen::Vector2d &coordinate);

@@ -38,7 +38,7 @@ include_directories(
         ${EIGEN3_INCLUDE_DIR}
 )
 
-add_executable(mapping_node src/mapping_node.cpp include/mapper.cpp include/grid.cpp include/multi_solution_map.cpp include/single_layer.cpp)
+add_executable(mapping_node src/mapping_node.cpp include/mapper.cpp include/grid.cpp include/multi_resolution_map.cpp include/single_layer.cpp)
 
 target_link_libraries(mapping_node yaml-cpp ${catkin_LIBRARIES} /usr/local/lib/libprofiler.so)
 
