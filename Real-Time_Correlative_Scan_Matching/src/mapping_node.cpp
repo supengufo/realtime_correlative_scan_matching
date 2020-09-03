@@ -35,15 +35,16 @@ private:
     std::string bag_path_, lidar_topic_;
 
 public:
-    Runner(ros::NodeHandle &nh, ros::NodeHandle &ph, std::string bag_path, std::string lidar_topic) : nh_(nh), ph_(ph), bag_path_(bag_path), lidar_topic_(lidar_topic) {
+    Runner(ros::NodeHandle &nh, ros::NodeHandle &ph, std::string &bag_path, std::string &lidar_topic) : nh_(nh), ph_(ph), bag_path_(bag_path), lidar_topic_(lidar_topic) {
         map_pub_ = nh.advertise<nav_msgs::OccupancyGrid>("mapping/grid_map", 1);
         map_pub_low_resolution_ = nh.advertise<nav_msgs::OccupancyGrid>("mapping/grid_map_low", 1);
         odom_pub_ = nh.advertise<nav_msgs::Odometry>("mapping/odometry", 10);
         scan_pub_ = nh.advertise<sensor_msgs::LaserScan>("mapping/scan", 1);
         odom_broadcaster_.reset(new tf::TransformBroadcaster());
-        getMapParams(ph_, map_params_);
+        GetMapParams(ph_, map_params_);
         bag_.open(bag_path_, rosbag::bagmode::Read);
     }
+
     void Run() {
 //        MapParams map_params;
         rosbag::View bag_view(bag_, rosbag::TopicQuery(lidar_topic_));
@@ -53,7 +54,7 @@ public:
             ++bag_it;
         }
 
-        ros::Rate loop_rate(1);
+        ros::Rate loop_rate(10);
         Mapper::Ptr mapper(new Mapper(map_params_));
         bool init = false;
         Pose2d pose_estimate_cur, pose_estimate_pre;
@@ -66,7 +67,6 @@ public:
             const auto scan = bag_it->instantiate<sensor_msgs::LaserScan>();
             scan->header.stamp = ros::Time::now();
             scan_pub_.publish(scan);
-
             Pose2d pose_estimate = Pose2d(0, 0, 0);
             if (!init) {
                 mapper->UpdateMultiSolutionMap(pose_estimate, scan);
@@ -80,10 +80,10 @@ public:
             auto uesd_time = 1000*(time_end - time_start)/(double) CLOCKS_PER_SEC;
             total_time += uesd_time;
             cout << "time use:" << uesd_time << "ms" << endl;
-            pubOdom(odom_pub_, pose_estimate);
-            pubTF(odom_broadcaster_, pose_estimate);
-            pubGridMap(mapper, map_pub_);
-            pubGridMapLowResolution(mapper, map_pub_low_resolution_);
+            PubOdom(odom_pub_, pose_estimate);
+            PubTF(odom_broadcaster_, pose_estimate);
+            PubGridMap(mapper, map_pub_);
+            PubGridMapLowResolution(mapper, map_pub_low_resolution_);
             pose_estimate_cur = pose_estimate;
             pose_estimate_pre = pose_estimate_cur;
             ++bag_it;
@@ -94,13 +94,13 @@ public:
             loop_rate.sleep();
         }
     }
-    void pubTF(tf_TransformBroadcaster_Ptr &tf_pub, const Pose2d &robot_pose) {
+
+    void PubTF(tf_TransformBroadcaster_Ptr &tf_pub, const Pose2d &robot_pose) {
         geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(robot_pose.getYaw());
         geometry_msgs::TransformStamped odom_trans;
         odom_trans.header.stamp = ros::Time::now();
         odom_trans.header.frame_id = "map";
         odom_trans.child_frame_id = "laser";
-
         odom_trans.transform.translation.x = robot_pose.getX();
         odom_trans.transform.translation.y = robot_pose.getY();
         odom_trans.transform.translation.z = 0.0;
@@ -108,7 +108,7 @@ public:
         tf_pub->sendTransform(odom_trans);
     }
 
-    void pubOdom(const ros::Publisher &publisher, const Pose2d &robot_pose) {
+    void PubOdom(const ros::Publisher &publisher, const Pose2d &robot_pose) {
         geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(robot_pose.getYaw());
         nav_msgs::Odometry odom;
         odom.header.stamp = ros::Time::now();
@@ -120,7 +120,7 @@ public:
         publisher.publish(odom);
     }
 
-    void getMapParams(const ros::NodeHandle &ph, std::unordered_map<std::string, double> &map_params) {
+    void GetMapParams(const ros::NodeHandle &ph, std::unordered_map<std::string, double> &map_params) {
         int map_grid_sizes_x = 0;
         ph.getParam("map_grid_sizes_x", map_grid_sizes_x);
         map_params["map_grid_sizes_x"] = 1000;
@@ -135,7 +135,7 @@ public:
         map_params["magnification"] = 2;
     }
 
-    void getMapParams(const ros::NodeHandle &ph, MapParams &map_params) {
+    void GetMapParams(const ros::NodeHandle &ph, MapParams &map_params) {
 //    ph.getParam("map_grid_sizes_x", map_params.map_grid_sizes_x);
 //    ph.getParam("map_grid_sizes_y", map_params.map_grid_sizes_y);
 //    ph.getParam("map_ori_x", map_params.map_ori_x);
@@ -154,17 +154,17 @@ public:
         map_params.search_step_xy = 0.01;
         map_params.search_step_rad = 0.01;
 //    map_params.search_step_rad = M_PI*1./180;
-        map_params.search_steps = 10;
+        map_params.search_steps = 5;
         map_params.layers = 2;
         map_params.magnification = 2;
     }
 
-    void pubGridMap(const Mapper::Ptr &mapper, ros::Publisher &map_pub) {
+    void PubGridMap(const Mapper::Ptr &mapper, ros::Publisher &map_pub) {
         auto grid_map_msg = mapper->getROSOccGridMapVector().front();
         map_pub.publish(grid_map_msg);
     };
 
-    void pubGridMapLowResolution(const Mapper::Ptr &mapper, ros::Publisher &map_pub) {
+    void PubGridMapLowResolution(const Mapper::Ptr &mapper, ros::Publisher &map_pub) {
         auto grid_map_msg = mapper->getROSOccGridMapVector().back();
         map_pub.publish(grid_map_msg);
     };
@@ -177,10 +177,7 @@ int main(int argc, char **argv) {
     ros::NodeHandle ph("~");
     std::string bag_path("/home/nrsl/code/ogm_ws/src/data/2020-08-28-15-28-24.bag");
     std::string lidar_topic("/scan");
-//    cout << "bag_file_path: " << bag_path << endl;
-//    cout << "lidar_topic: " << lidar_topic << endl;
     Runner runner(nh, ph, bag_path, lidar_topic);
     runner.Run();
-//    cout << "===> avrerage use time: " << total_time/double(count) << std::endl;
     ProfilerStop();
 }

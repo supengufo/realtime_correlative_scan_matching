@@ -53,7 +53,6 @@ private:
     int min_x_{}, min_y_{};
     int ori_x_{}, ori_y_{};
     MapParams this_map_params_;
-//    double RealTimeCorrelativeScanMatchCore(const sensor_msgs::LaserScanPtr &scan, const Pose2d &pose_estimate);
 };
 
 

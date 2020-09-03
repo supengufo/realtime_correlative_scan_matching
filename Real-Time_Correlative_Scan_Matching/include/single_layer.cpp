@@ -217,14 +217,12 @@ void SingleLayer::GetSearchParameters(const Pose2d &pose, vector<SearchParameter
 }
 double SingleLayer::RealTimeCorrelativeScanMatch(const sensor_msgs::LaserScanPtr &scan, Pose2d &pose_estimate, map<double, Pose2d> &multi_candidates) {
     multi_candidates.clear();
-    cout<<"Input pose:"<<pose_estimate.getX()<<" "<<pose_estimate.getY()<<" "<<pose_estimate.getYaw()<<endl;
+    cout << "Input pose:" << pose_estimate.getX() << " " << pose_estimate.getY() << " " << pose_estimate.getYaw() << endl;
     vector<SearchParameters> search_parameters;
     GetSearchParameters(pose_estimate, search_parameters);
-    Pose2d best_candidate;
     PointCloud point_cloud;
     GeneratePointCloud(scan, point_cloud);
     point_cloud = pose_estimate*point_cloud;
-//    double max_score = 0;
     for (const auto &search_parameter:search_parameters) {
         Pose2d pose(search_parameter.get_angle(), 0, 0);
         auto point_cloud_tmp = pose*point_cloud;
@@ -236,15 +234,15 @@ double SingleLayer::RealTimeCorrelativeScanMatch(const sensor_msgs::LaserScanPtr
             double yaw = pose_estimate.getYaw() + search_parameter.get_angle();
             double x = pose_estimate.getX() + delta_xy.x();
             double y = pose_estimate.getY() + delta_xy.y();
-            best_candidate = Pose2d(yaw, x, y);
+            Pose2d best_candidate = Pose2d(yaw, x, y);
             multi_candidates.insert({tmp_score, best_candidate});
             if (multi_candidates.size() > 5) {
                 multi_candidates.erase(multi_candidates.begin());
             }
         }
     }
-    pose_estimate = best_candidate;
-    return (--multi_candidates.begin())->first;
+    pose_estimate = (--multi_candidates.end())->second;
+    return (--multi_candidates.end())->first;
 }
 Pose2d SingleLayer::RealTimeCorrelativeScanMatch(const sensor_msgs::LaserScanPtr &scan, map<double, Pose2d> &multi_candidates) {
     Pose2d return_pose;

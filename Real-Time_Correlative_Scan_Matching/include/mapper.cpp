@@ -29,14 +29,14 @@ void Mapper::UpdateMultiSolutionMap(const Pose2d &pose_estimate, const sensor_ms
 }
 
 double Mapper::RealTimeCorrelativeScanMatch(const Pose2d &initial_pose_estimate, const sensor_msgs::LaserScanPtr &point_cloud, Pose2d &pose_estimate) {
-    int layers = get_layers_count();
     pose_estimate = initial_pose_estimate;
     double score = 0;
     auto low_resolution_map_layer = multiple_resolution_map_->get_idx_multi_resolution_map(1);
     map<double, Pose2d> multi_candidates;
     score = low_resolution_map_layer->RealTimeCorrelativeScanMatch(point_cloud, pose_estimate, multi_candidates);
+    int id = 0;
     for (const auto &i:multi_candidates) {
-        cout << i.first << " " << i.second.getX() << " " << i.second.getY() << " " << i.second.getYaw() << endl;
+        cout <<to_string(++id)<<" : "<< i.first << " " << i.second.getX() << " " << i.second.getY() << " " << i.second.getYaw() << endl;
     }
     auto high_resolution_map_layer = multiple_resolution_map_->get_idx_multi_resolution_map(0);
 
