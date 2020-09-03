@@ -82,8 +82,8 @@ void getMapParams(const ros::NodeHandle &ph, MapParams &map_params) {
     map_params.map_ori_y = 500;
     map_params.resolution = 0.05;
     map_params.search_step_xy = 0.01;
-//    map_params.search_step_rad = 0.005;
-    map_params.search_step_rad = M_PI*1./180;
+    map_params.search_step_rad = 0.005;
+//    map_params.search_step_rad = M_PI*1./180;
     map_params.search_steps = 5;
     map_params.layers = 2;
     map_params.magnification = 2;
@@ -118,8 +118,8 @@ int main(int argc, char **argv) {
     ros::Publisher scan_pub = nh.advertise<sensor_msgs::LaserScan>("mapping/scan", 1);
     tf_TransformBroadcaster_Ptr odom_broadcaster(new tf::TransformBroadcaster());
 //    std::string bag_path, lidar_topic;
-//    std::string bag_path("/home/nrsl/code/ogm_ws/src/data/2020-08-28-15-28-24.bag");
-    std::string bag_path("/home/nrsl/dataset/ogm/laser2_2018-07-14-18-41-42.bag");
+    std::string bag_path("/home/nrsl/code/ogm_ws/src/data/2020-08-28-15-28-24.bag");
+//    std::string bag_path("/home/nrsl/dataset/ogm/laser2_2018-07-14-18-41-42.bag");
 //    std::string bag_path("../../../src/data/2020-08-28-15-28-24.bag");
     std::string lidar_topic("/scan");
 //    ph.getParam("bag_file_path", bag_path);

@@ -17,6 +17,8 @@
 #include <cslibs_math_2d/linear/transform.hpp>
 #include "pose2d.h"
 #include "parameters.h"
+using namespace std;
+using PointCloud = vector<Eigen::Vector2d>;
 
 class SingleLayer {
 public:
@@ -32,12 +34,17 @@ public:
 //    float getGridProbValue(Eigen::Vector2d &coordinate);
 //    void updateMapFromBaseMap(const SingleLayer::Ptr &base_map, const Eigen::Matrix3d &pose, const sensor_msgs::LaserScanConstPtr &scan);
     bool CheckCoordinateValid(Eigen::Vector2d &coordinate) const;
-    double RealTimeCorrelativeScanMatch(const sensor_msgs::LaserScanPtr &point_cloud, Pose2d &pose_estimate);
-    double RealTimeCorrelativeScanMatchCore(const sensor_msgs::LaserScanPtr &scan, const Pose2d &pose_estimate);
+    static void GeneratePointCloud(const sensor_msgs::LaserScanPtr &scan, PointCloud &point_cloud);
+    double RealTimeCorrelativeScanMatch(const sensor_msgs::LaserScanPtr &scan, Pose2d &pose_estimate);
     nav_msgs::OccupancyGrid &GetOccupancyGridMap();
-    void GetSearchParameters(const Pose2d &pose, SearchParameters &search_parameters);
+    void GetSearchParameters(const Pose2d &pose, vector<SearchParameters> &candidates);
     float GetGridLogValue(Eigen::Vector2d &coordinate);
     void SetGridLogValue(Eigen::Vector2d &coordinate, const float &log_value);
+
+private:
+    double RealTimeCorrelativeScanMatchCore(const PointCloud &point_cloud);
+    double RealTimeCorrelativeScanMatchCore(const sensor_msgs::LaserScanPtr &scan, const Pose2d &pose_estimate);
+
 private:
     nav_msgs::OccupancyGrid ros_grid_map_;
     std::vector<std::vector<Grid::Ptr>> grid_map_;
@@ -45,6 +52,7 @@ private:
     int min_x_{}, min_y_{};
     int ori_x_{}, ori_y_{};
     MapParams this_map_params_;
+//    double RealTimeCorrelativeScanMatchCore(const sensor_msgs::LaserScanPtr &scan, const Pose2d &pose_estimate);
 };
 
 

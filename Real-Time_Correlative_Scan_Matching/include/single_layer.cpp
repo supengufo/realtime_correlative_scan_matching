@@ -132,7 +132,7 @@ void SingleLayer::UpdateOccGrids(Eigen::Vector2d &occ_grids_coor) {
     else if (occ_grids_coor.y() < min_y_) {
         occ_grids_coor.y() = min_y_;
     }
-    int update_x,update_y;
+    int update_x, update_y;
     update_x = occ_grids_coor.x() + ori_x_;
     update_y = occ_grids_coor.y() + ori_y_;
 
@@ -203,52 +203,80 @@ bool SingleLayer::CheckCoordinateValid(Eigen::Vector2d &coordinate) const {
     }
 }
 
-void SingleLayer::GetSearchParameters(const Pose2d &pose, SearchParameters &search_parameters) {
+void SingleLayer::GetSearchParameters(const Pose2d &pose, vector<SearchParameters> &candidates) {
     double xy_step_length = this_map_params_.search_step_xy;
     double angle_step_length = this_map_params_.search_step_rad;
     int search_steps = this_map_params_.search_steps;
-    search_parameters.GenerateSearchParameters(pose, xy_step_length, angle_step_length, search_steps);
+//    search_parameters.GenerateSearchParameters(pose, xy_step_length, angle_step_length, search_steps);
+    candidates.clear();
+    for (int angle = -search_steps; angle <= search_steps; ++angle) {
+        double yaw = pose.getYaw() + angle*angle_step_length;
+        SearchParameters searchParameters(yaw, xy_step_length, search_steps);
+        candidates.push_back(searchParameters);
+    }
 }
 
-double SingleLayer::RealTimeCorrelativeScanMatch(const sensor_msgs::LaserScanPtr &point_cloud, Pose2d &pose_estimate) {
-    SearchParameters searchParameters;
-    GetSearchParameters(pose_estimate, searchParameters);
-    auto candidates = searchParameters.candidates;
-
+double SingleLayer::RealTimeCorrelativeScanMatch(const sensor_msgs::LaserScanPtr &scan, Pose2d &pose_estimate) {
+    cout << "map params:" << this_map_params_.resolution << endl;
+    cout << "Input pose: " << pose_estimate.getX() << " " << pose_estimate.getY() << " " << pose_estimate.getYaw() << endl;
+    vector<SearchParameters> search_parameters;
+    GetSearchParameters(pose_estimate, search_parameters);
     Pose2d best_candidate;
-
+    PointCloud point_cloud;
+    GeneratePointCloud(scan, point_cloud);
+    //TODO：这里需要先使用 pose_estimate 变换一下，这个基础上再加上一些扰动。
+    point_cloud = pose_estimate*point_cloud;
     double max_score = 0;
-    for (const auto &candidate:candidates) {
-        double tmp_score = RealTimeCorrelativeScanMatchCore(point_cloud, candidate);
-        if (tmp_score > max_score) {
-            max_score = tmp_score;
-            best_candidate = candidate;
+    for (const auto &search_parameter:search_parameters) {
+        Pose2d pose(search_parameter.get_angle(), 0, 0);
+        auto point_cloud_tmp = pose*point_cloud;
+        for (const auto &delta_xy:search_parameter.get_delta_xy()) {
+            for (auto &p:point_cloud_tmp) {
+                p += delta_xy;
+            }
+            double tmp_score = RealTimeCorrelativeScanMatchCore(point_cloud_tmp);
+            if (tmp_score > max_score) {
+                max_score = tmp_score;
+                double yaw = pose_estimate.getYaw() + search_parameter.get_angle();
+                double x = pose_estimate.getX() + delta_xy.x();
+                double y = pose_estimate.getY() + delta_xy.y();
+                best_candidate = Pose2d(yaw, x, y);
+            }
         }
     }
     pose_estimate = best_candidate;
+    cout << "Output pose: " << pose_estimate.getX() << " " << pose_estimate.getY() << " " << pose_estimate.getYaw() << endl;
     return max_score;
 }
 
-double SingleLayer::RealTimeCorrelativeScanMatchCore(const sensor_msgs::LaserScanPtr &scan, const Pose2d &pose_estimate) {
-    const double &ang_min = scan->angle_min;
-    const double &ang_inc = scan->angle_increment;
-    const double &range_max = scan->range_max;
-    const double &range_min = scan->range_min;
-
+double SingleLayer::RealTimeCorrelativeScanMatchCore(const PointCloud &point_cloud) {
     const double &cell_size = this->this_map_params_.resolution;
     std::vector<std::pair<int, int>> free_cordinates;
     std::vector<std::pair<int, int>> occ_cordinates;
-
     double score = 0;
-    for (size_t i = 0; i < scan->ranges.size(); i++) {
-        double R = scan->ranges.at(i);
-        if (R > range_max || R < range_min) {
-            continue;
+    for (auto &p_odom:point_cloud) {
+//        Eigen::Vector2d p_odom = pose_estimate*p_lidar;
+        int x_id_occ = p_odom.x() > 0 ? floor(p_odom.x()/cell_size) : ceil(p_odom.x()/cell_size);
+        int y_id_occ = p_odom.y() > 0 ? floor(p_odom.y()/cell_size) : ceil(p_odom.y()/cell_size);
+        if (x_id_occ > min_x_ && x_id_occ < max_x_ && y_id_occ > min_y_ && y_id_occ < max_y_) {
+            x_id_occ = x_id_occ + ori_x_;
+            y_id_occ = y_id_occ + ori_y_;
+            if (grid_map_[x_id_occ][y_id_occ] != nullptr) {
+                score += grid_map_[x_id_occ][y_id_occ]->getGridLog();
+            }
         }
-        double angle = ang_inc*i + ang_min;
-        double cangle = cos(angle);
-        double sangle = sin(angle);
-        Eigen::Vector2d p_lidar(R*cangle, R*sangle);
+    }
+    return score;
+}
+
+double SingleLayer::RealTimeCorrelativeScanMatchCore(const sensor_msgs::LaserScanPtr &scan, const Pose2d &pose_estimate) {
+    const double &cell_size = this->this_map_params_.resolution;
+    std::vector<std::pair<int, int>> free_cordinates;
+    std::vector<std::pair<int, int>> occ_cordinates;
+    double score = 0;
+    PointCloud point_cloud;
+    GeneratePointCloud(scan, point_cloud);
+    for (auto &p_lidar:point_cloud) {
         Eigen::Vector2d p_odom = pose_estimate*p_lidar;
         int x_id_occ = p_odom.x() > 0 ? floor(p_odom.x()/cell_size) : ceil(p_odom.x()/cell_size);
         int y_id_occ = p_odom.y() > 0 ? floor(p_odom.y()/cell_size) : ceil(p_odom.y()/cell_size);
@@ -261,4 +289,24 @@ double SingleLayer::RealTimeCorrelativeScanMatchCore(const sensor_msgs::LaserSca
         }
     }
     return score;
+}
+
+
+void SingleLayer::GeneratePointCloud(const sensor_msgs::LaserScanPtr &scan, PointCloud &point_cloud) {
+    const double &ang_min = scan->angle_min;
+    const double &ang_inc = scan->angle_increment;
+    const double &range_max = scan->range_max;
+    const double &range_min = scan->range_min;
+    point_cloud.clear();
+    for (size_t i = 0; i < scan->ranges.size(); i++) {
+        double R = scan->ranges.at(i);
+        if (R > range_max || R < range_min) {
+            continue;
+        }
+        double angle = ang_inc*i + ang_min;
+        double cangle = cos(angle);
+        double sangle = sin(angle);
+        Eigen::Vector2d p_lidar(R*cangle, R*sangle);
+        point_cloud.push_back(p_lidar);
+    }
 }
