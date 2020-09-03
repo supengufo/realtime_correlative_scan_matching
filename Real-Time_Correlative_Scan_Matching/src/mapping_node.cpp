@@ -136,24 +136,14 @@ public:
     }
 
     void GetMapParams(const ros::NodeHandle &ph, MapParams &map_params) {
-//    ph.getParam("map_grid_sizes_x", map_params.map_grid_sizes_x);
-//    ph.getParam("map_grid_sizes_y", map_params.map_grid_sizes_y);
-//    ph.getParam("map_ori_x", map_params.map_ori_x);
-//    ph.getParam("map_ori_y", map_params.map_ori_y);
-//    ph.getParam("resolution", map_params.resolution);
-//    ph.getParam("search_step_xy", map_params.search_step_xy);
-//    ph.getParam("search_step_rad", map_params.search_step_rad);
-//    ph.getParam("layers", map_params.layers);
-//    ph.getParam("magnification", map_params.magnification);
-//    cout << "map_grid_sizes_x: " << map_grid_sizes_x << endl;
         map_params.map_grid_sizes_x = 1000;
         map_params.map_grid_sizes_y = 1000;
         map_params.map_ori_x = 500;
         map_params.map_ori_y = 500;
         map_params.resolution = 0.05;
-        map_params.search_step_xy = 0.01;
-        map_params.search_step_rad = 0.01;
-//    map_params.search_step_rad = M_PI*1./180;
+        map_params.search_step_xy = 0.005;
+//        map_params.search_step_rad = 0.01;
+        map_params.search_step_rad = M_PI*0.75/180;
         map_params.search_steps = 5;
         map_params.layers = 2;
         map_params.magnification = 2;
@@ -175,7 +165,8 @@ int main(int argc, char **argv) {
     ros::init(argc, argv, "mapping_node");
     ros::NodeHandle nh;
     ros::NodeHandle ph("~");
-    std::string bag_path("/home/nrsl/code/ogm_ws/src/data/2020-08-28-15-28-24.bag");
+//    std::string bag_path("/home/nrsl/code/ogm_ws/src/data/2020-08-28-15-28-24.bag");
+    std::string bag_path("/home/alex/code/ogm_ws/src/realtime_correlative_scan_matching/data/2020-08-28-15-28-24.bag");
     std::string lidar_topic("/scan");
     Runner runner(nh, ph, bag_path, lidar_topic);
     runner.Run();

@@ -36,7 +36,7 @@ double Mapper::RealTimeCorrelativeScanMatch(const Pose2d &initial_pose_estimate,
     score = low_resolution_map_layer->RealTimeCorrelativeScanMatch(point_cloud, pose_estimate, multi_candidates);
     int id = 0;
     for (const auto &i:multi_candidates) {
-        cout <<to_string(++id)<<" : "<< i.first << " " << i.second.getX() << " " << i.second.getY() << " " << i.second.getYaw() << endl;
+        cout <<to_string(++id)<<" : score: "<< i.first << "  xy/yaw: " << i.second.getX() << " " << i.second.getY() << " " << i.second.getYaw() << endl;
     }
     auto high_resolution_map_layer = multiple_resolution_map_->get_idx_multi_resolution_map(0);
 

@@ -13,7 +13,7 @@ void MultipleResolutionMap::SetupMultiResolutionMapParams() {
         each_map_params.magnification = each_layer_magnification;
         each_map_params.map_grid_sizes_x = base_map_params_.map_grid_sizes_x/each_layer_magnification;
         each_map_params.map_grid_sizes_y = base_map_params_.map_grid_sizes_y/each_layer_magnification;
-        each_map_params.map_ori_x = base_map_params_.map_ori_x/each_layer_magnification;//这里应该是m为单位吧？
+        each_map_params.map_ori_x = base_map_params_.map_ori_x/each_layer_magnification;
         each_map_params.map_ori_y = base_map_params_.map_ori_y/each_layer_magnification;
         each_map_params.resolution = base_map_params_.resolution*each_layer_magnification;
         each_map_params.search_step_xy = base_map_params_.search_step_xy*each_layer_magnification;

@@ -18,7 +18,7 @@ void SingleLayer::InitOccupancyGridMsg() {
     ros_grid_map_.info.width = this_map_params_.map_grid_sizes_x;
     ros_grid_map_.info.height = this_map_params_.map_grid_sizes_y;
     ros_grid_map_.info.resolution = this_map_params_.resolution;
-    ros_grid_map_.info.origin.position.x = -this_map_params_.map_ori_x*this_map_params_.resolution;//这个地图的原点是以m为单位的
+    ros_grid_map_.info.origin.position.x = -this_map_params_.map_ori_x*this_map_params_.resolution;
     ros_grid_map_.info.origin.position.y = -this_map_params_.map_ori_y*this_map_params_.resolution;
     max_x_ = ros_grid_map_.info.width/2.0; //cell size
     max_y_ = ros_grid_map_.info.height/2.0;

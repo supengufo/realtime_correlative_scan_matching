@@ -17,9 +17,7 @@ public:
         x_ = 0.0;
         y_ = 0.0;
         theta_ = 0.0;
-//        GenerateSinCosMap();
     }
-//    static void GenerateSinCosMap();
     Pose2d(double x, double y, double theta) : x_(x), y_(y), theta_(theta) {
         double cos_value = cos(theta_);
         double sin_value = sin(theta_);
@@ -83,8 +81,6 @@ public:
 private:
     double x_, y_, theta_;
     Eigen::Matrix2d R_;
-//    static std::unordered_map<int,double> sin_map_;
-//    static std::unordered_map<int,double> cos_map_;
 };
 
 #endif

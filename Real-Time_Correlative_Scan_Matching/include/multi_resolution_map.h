@@ -19,7 +19,6 @@
 #include "single_layer.h"
 #include "pose2d.h"
 
-
 class MultipleResolutionMap {
 public:
     typedef std::shared_ptr<MultipleResolutionMap> Ptr;

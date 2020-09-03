@@ -25,14 +25,10 @@ public:
     typedef std::shared_ptr<SingleLayer> Ptr;
     SingleLayer(MapParams &base_map_params);
     void InitOccupancyGridMsg();
-//    void updateMap(const Eigen::Matrix3d &pose, const sensor_msgs::LaserScanConstPtr &scan);
     void UpdateMap(const Pose2d &pose, const sensor_msgs::LaserScanConstPtr &scan);
     void UpdateMap(const SingleLayer::Ptr &base_layer);
     void UpdateFreeGrids(std::vector<Eigen::Vector2d> &free_grids_coor);
     void UpdateOccGrids(Eigen::Vector2d &occ_grids_coor);
-//    float getGridLogValue(Eigen::Vector2d &coordinate, float &unknown);
-//    float getGridProbValue(Eigen::Vector2d &coordinate);
-//    void updateMapFromBaseMap(const SingleLayer::Ptr &base_map, const Eigen::Matrix3d &pose, const sensor_msgs::LaserScanConstPtr &scan);
     bool CheckCoordinateValid(Eigen::Vector2d &coordinate) const;
     static void GeneratePointCloud(const sensor_msgs::LaserScanPtr &scan, PointCloud &point_cloud);
     Pose2d RealTimeCorrelativeScanMatch(const sensor_msgs::LaserScanPtr &scan, map<double, Pose2d> &multi_candidates);
