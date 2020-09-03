@@ -217,6 +217,7 @@ void SingleLayer::GetSearchParameters(const Pose2d &pose, vector<SearchParameter
 }
 double SingleLayer::RealTimeCorrelativeScanMatch(const sensor_msgs::LaserScanPtr &scan, Pose2d &pose_estimate, map<double, Pose2d> &multi_candidates) {
     multi_candidates.clear();
+    cout<<"Input pose:"<<pose_estimate.getX()<<" "<<pose_estimate.getY()<<" "<<pose_estimate.getYaw()<<endl;
     vector<SearchParameters> search_parameters;
     GetSearchParameters(pose_estimate, search_parameters);
     Pose2d best_candidate;
